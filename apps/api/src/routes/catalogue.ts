@@ -142,4 +142,47 @@ export async function catalogueRoutes(app: FastifyInstance) {
     await cache.set("rate-card", result, 3600);
     return result;
   });
+
+  // American-spelling aliases used by the client app
+  app.get("/catalog/services", async (req, reply) => {
+    const { category, status, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const where: any = {};
+    if (category) where.categoryTier1 = category;
+    if (status) where.status = status;
+    else where.status = "PUBLISHED";
+    const [items, total] = await Promise.all([
+      prisma.serviceUnit.findMany({ where, skip, take: parseInt(limit), orderBy: { name: "asc" } }),
+      prisma.serviceUnit.count({ where }),
+    ]);
+    return { items, total, page: parseInt(page), limit: parseInt(limit) };
+  });
+
+  app.get("/catalog/categories", async () => {
+    const cached = await cache.get("categories");
+    if (cached) return cached;
+    const services = await prisma.serviceUnit.findMany({
+      where: { status: "PUBLISHED" },
+      select: { categoryTier1: true, categoryTier2: true },
+    });
+    const tree: Record<string, Set<string>> = {};
+    for (const s of services) {
+      if (!tree[s.categoryTier1]) tree[s.categoryTier1] = new Set();
+      if (s.categoryTier2) tree[s.categoryTier1].add(s.categoryTier2);
+    }
+    const result = Object.entries(tree).map(([tier1, tier2s]) => ({
+      tier1,
+      tier2: [...tier2s],
+    }));
+    await cache.set("categories", result, 3600);
+    return result;
+  });
+
+  app.get("/catalog/packages", async () => {
+    return prisma.package.findMany({ where: { status: "ACTIVE" } });
+  });
+
+  app.get("/catalog/bundles", async () => {
+    return prisma.bundle.findMany({ where: { status: "ACTIVE" } });
+  });
 }

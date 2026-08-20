@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingBag, FolderKanban, Users, Briefcase, FileText, BarChart3, Settings, LogOut, Menu, X, Globe, IndianRupee, Handshake, Bell } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, FolderKanban, Users, Briefcase, FileText, BarChart3, Settings, LogOut, Menu, X, Globe, IndianRupee, Handshake, Bell, FileSearch, Gift, ClipboardList, Layers } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@lib/utils';
 import useAuthStore from '@store/authStore';
@@ -14,6 +14,10 @@ const navItems = [
   { label: 'Engagements', icon: Handshake, path: '/app/admin/engagements' },
   { label: 'Finance', icon: IndianRupee, path: '/app/admin/finance' },
   { label: 'Content', icon: FileText, path: '/app/admin/content' },
+  { label: 'RFPs', icon: FileSearch, path: '/app/admin/rfps' },
+  { label: 'Referrals', icon: Gift, path: '/app/admin/referrals' },
+  { label: 'Reports', icon: ClipboardList, path: '/app/admin/reports' },
+  { label: 'Project Wall', icon: Layers, path: '/app/admin/project-wall' },
   { label: 'Notifications', icon: Bell, path: '/app/admin/notifications' },
   { label: 'Analytics', icon: BarChart3, path: '/app/admin/analytics' },
   { label: 'Settings', icon: Settings, path: '/app/admin/settings' },

@@ -49,7 +49,7 @@ export async function authRoutes(app: FastifyInstance) {
     const payload = { sub: user.id, email: user.email, role: user.role, orgId: user.orgId ?? undefined };
     const accessToken = signToken(payload);
     const refreshToken = signRefreshToken(payload);
-    await redis.set(`refresh:${user.id}`, refreshToken, "EX", 604800);
+    try { await redis.set(`refresh:${user.id}`, refreshToken, "EX", 604800); } catch {}
 
     return { data: { user: { id: user.id, name: user.name, email: user.email, role: user.role }, accessToken } };
   });
@@ -60,7 +60,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (!header?.startsWith("Bearer ")) return reply.code(401).send({ message: "No token" });
     try {
       const jwt = await import("jsonwebtoken");
-      const decoded = jwt.default.verify(header.slice(7), process.env.JWT_SECRET ?? "dev-secret") as { sub: string; email: string; role: string };
+      const decoded = jwt.default.verify(header.slice(7), process.env.JWT_SECRET ?? process.env.NEXTAUTH_SECRET ?? "dev-secret-change-me") as { sub: string; email: string; role: string };
       const user = await prisma.user.findUnique({ where: { id: decoded.sub } });
       if (!user) return reply.code(401).send({ message: "User not found" });
       const payload = { sub: user.id, email: user.email, role: user.role, orgId: user.orgId ?? undefined };
@@ -76,7 +76,7 @@ export async function authRoutes(app: FastifyInstance) {
     const user = await prisma.user.findUnique({ where: { email } });
     if (user) {
       const token = randomInt(100000, 999999).toString();
-      await redis.set(`reset:${email}`, token, "EX", 3600);
+      try { await redis.set(`reset:${email}`, token, "EX", 3600); } catch {}
       app.log.info(`Reset token for ${email}: ${token}`);
     }
     return { success: true, message: "If an account exists, a reset link has been sent" };
@@ -104,7 +104,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     const otp = String(randomInt(100000, 999999));
     const key = `otp:${email ?? phone}`;
-    await redis.set(key, otp, "EX", 300); // 5 min TTL
+    try { await redis.set(key, otp, "EX", 300); } catch {} // 5 min TTL
 
     // TODO: send OTP via email (Resend) or SMS/WhatsApp
     if (process.env.NODE_ENV === "development") {
@@ -124,12 +124,13 @@ export async function authRoutes(app: FastifyInstance) {
     const identifier = email ?? phone;
     if (!identifier) return reply.code(400).send({ error: "email or phone required" });
 
-    const stored = await redis.get(`otp:${identifier}`);
+    let stored: string | null = null;
+    try { stored = await redis.get(`otp:${identifier}`); } catch {}
     if (!stored || stored !== code) {
       return reply.code(401).send({ error: "Invalid or expired OTP" });
     }
 
-    await redis.del(`otp:${identifier}`);
+    try { await redis.del(`otp:${identifier}`); } catch {}
 
     let user = await prisma.user.findFirst({
       where: email ? { email } : { phone },
@@ -163,11 +164,12 @@ export async function authRoutes(app: FastifyInstance) {
   // POST /auth/whatsapp/callback
   app.post("/auth/whatsapp/callback", async (req, reply) => {
     const { phone, code } = req.body as { phone: string; code: string };
-    const stored = await redis.get(`otp:${phone}`);
+    let stored: string | null = null;
+    try { stored = await redis.get(`otp:${phone}`); } catch {}
     if (!stored || stored !== code) {
       return reply.code(401).send({ error: "Invalid OTP" });
     }
-    await redis.del(`otp:${phone}`);
+    try { await redis.del(`otp:${phone}`); } catch {}
 
     let user = await prisma.user.findFirst({ where: { phone } });
     if (!user) {
@@ -192,7 +194,7 @@ export async function authRoutes(app: FastifyInstance) {
     const header = req.headers.authorization;
     if (header?.startsWith("Bearer ")) {
       const token = header.slice(7);
-      await redis.set(`blacklist:${token}`, "1", "EX", 86400);
+      try { await redis.set(`blacklist:${token}`, "1", "EX", 86400); } catch {}
     }
     return { success: true };
   });

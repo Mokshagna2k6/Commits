@@ -84,33 +84,78 @@ export async function financeRoutes(app: FastifyInstance) {
   // Razorpay webhook
   app.post("/webhooks/razorpay", async (req, reply) => {
     const signature = req.headers["x-razorpay-signature"] as string;
-    const body = JSON.stringify(req.body);
+    if (!signature) return reply.code(400).send({ error: "Missing signature" });
 
+    const body = JSON.stringify(req.body);
     if (!verifyRazorpaySignature(body, signature)) {
       return reply.code(400).send({ error: "Invalid signature" });
     }
 
-    const event = req.body as any;
-    if (event.event === "payment.captured") {
-      const orderId = event.payload?.payment?.entity?.order_id;
-      if (orderId) {
-        const invoice = await prisma.invoice.findFirst({
-          where: { razorpayOrderId: orderId },
+    const payload = req.body as any;
+    const eventType = payload.event;
+    const entity = payload.payload?.payment?.entity;
+    if (!entity) return reply.code(400).send({ error: "Invalid payload" });
+
+    if (eventType === "payment.captured") {
+      const rzpOrderId = entity.order_id;
+
+      // Update invoice if linked
+      const invoice = await prisma.invoice.findFirst({
+        where: { razorpayOrderId: rzpOrderId },
+      });
+      if (invoice) {
+        await prisma.invoice.update({
+          where: { id: invoice.id },
+          data: { status: "PAID", paidAt: new Date() },
         });
-        if (invoice) {
-          await prisma.invoice.update({
-            where: { id: invoice.id },
-            data: { status: "PAID", paidAt: new Date() },
-          });
-          await emitEvent({
-            code: "INVOICE_PAID",
-            payload: { invoiceId: invoice.id, gateway: "razorpay" },
-            actor: "system",
-            engagementId: invoice.engagementId ?? undefined,
-          });
-        }
+        await emitEvent({
+          code: "INVOICE_PAID",
+          payload: { invoiceId: invoice.id, gateway: "razorpay" },
+          actor: "system",
+          engagementId: invoice.engagementId ?? undefined,
+        });
+      }
+
+      // Update order if linked
+      const order = await prisma.order.findFirst({
+        where: { razorpayOrderId: rzpOrderId },
+      });
+      if (order) {
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { status: "PAID", paidAt: new Date() },
+        });
+
+        await prisma.payment.create({
+          data: {
+            orderId: order.id,
+            gateway: "RAZORPAY",
+            gatewayPaymentId: entity.id,
+            gatewayOrderId: rzpOrderId,
+            amount: entity.amount,
+            currency: entity.currency ?? "INR",
+            status: "CAPTURED",
+            method: entity.method ?? "unknown",
+            metadata: entity,
+          },
+        });
+
+        await emitEvent({
+          code: "PAYMENT_CAPTURED",
+          payload: { orderId: order.id, paymentId: entity.id, amount: entity.amount },
+          actor: "SYSTEM",
+        });
       }
     }
+
+    if (eventType === "payment.failed") {
+      await emitEvent({
+        code: "PAYMENT_FAILED",
+        payload: { orderId: entity.order_id, reason: entity.error_description },
+        actor: "SYSTEM",
+      });
+    }
+
     return { ok: true };
   });
 

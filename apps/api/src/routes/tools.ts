@@ -288,4 +288,39 @@ Return as structured JSON.`;
     if (!bp) return reply.code(404).send({ error: "Blueprint not found" });
     return bp;
   });
+
+  // Demo / Lead capture
+  app.post("/lead/demo", async (req) => {
+    const { name, email, phone, company, message, preferredDate, source } =
+      req.body as {
+        name: string;
+        email: string;
+        phone?: string;
+        company?: string;
+        message?: string;
+        preferredDate?: string;
+        source?: string;
+      };
+
+    const lead = await prisma.lead.create({
+      data: {
+        name,
+        email,
+        phone: phone ?? null,
+        company: company ?? null,
+        message: message ?? null,
+        preferredDate: preferredDate ? new Date(preferredDate) : null,
+        source: source ?? "demo_page",
+        status: "NEW",
+      },
+    });
+
+    await emitEvent({
+      code: "LEAD_CREATED",
+      payload: { leadId: lead.id, source: lead.source },
+      actor: "SYSTEM",
+    });
+
+    return { success: true, leadId: lead.id };
+  });
 }

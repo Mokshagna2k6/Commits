@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, FileText, Receipt, Files, MessageCircle, User, LifeBuoy, ShoppingCart, LogOut, Menu, X, Handshake, ScrollText, Clock, Bell } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, FileText, Receipt, Files, MessageCircle, User, LifeBuoy, ShoppingCart, LogOut, Menu, X, Handshake, ScrollText, Clock, Bell, Milestone, Gift, Layers, MessageSquare, Activity, GitPullRequest, BarChart3, PackageCheck } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@lib/utils';
 import useAuthStore from '@store/authStore';
@@ -14,6 +14,14 @@ const navItems = [
   { label: 'Engagements', icon: Handshake, path: '/app/client/engagements' },
   { label: 'Contracts', icon: ScrollText, path: '/app/client/contracts' },
   { label: 'Timesheets', icon: Clock, path: '/app/client/timesheets' },
+  { label: 'Milestones', icon: Milestone, path: '/app/client/milestones' },
+  { label: 'Workspace', icon: Layers, path: '/app/client/workspace' },
+  { label: 'Activity', icon: Activity, path: '/app/client/activity' },
+  { label: 'Changes', icon: GitPullRequest, path: '/app/client/changes' },
+  { label: 'Reports', icon: BarChart3, path: '/app/client/reports' },
+  { label: 'Feedback', icon: MessageSquare, path: '/app/client/feedback' },
+  { label: 'Referrals', icon: Gift, path: '/app/client/referrals' },
+  { label: 'Handover', icon: PackageCheck, path: '/app/client/handover' },
   { label: 'Cart', icon: ShoppingCart, path: '/app/client/cart' },
   { label: 'Support', icon: LifeBuoy, path: '/app/client/support' },
   { label: 'Notifications', icon: Bell, path: '/app/client/notifications' },

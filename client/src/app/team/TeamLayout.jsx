@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, FolderKanban, User, LogOut, Menu, X, Clock } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, FolderKanban, User, LogOut, Menu, X, Clock, Calendar, Star, BookOpen, Inbox, Kanban, Cpu, Bug, IndianRupee, Users, BarChart3, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@lib/utils';
 import useAuthStore from '@store/authStore';
@@ -9,6 +9,17 @@ const navItems = [
   { label: 'Tasks', icon: CheckSquare, path: '/app/team/tasks' },
   { label: 'Projects', icon: FolderKanban, path: '/app/team/projects' },
   { label: 'Timesheets', icon: Clock, path: '/app/team/timesheets' },
+  { label: 'Calendar', icon: Calendar, path: '/app/team/calendar' },
+  { label: 'Reviews', icon: Star, path: '/app/team/reviews' },
+  { label: 'Knowledge', icon: BookOpen, path: '/app/team/knowledge' },
+  { label: 'Queue', icon: Inbox, path: '/app/team/queue' },
+  { label: 'Sprints', icon: Kanban, path: '/app/team/sprints' },
+  { label: 'Resources', icon: Cpu, path: '/app/team/resources' },
+  { label: 'Quality', icon: Bug, path: '/app/team/quality' },
+  { label: 'Finance', icon: IndianRupee, path: '/app/team/finance' },
+  { label: 'Clients', icon: Users, path: '/app/team/clients' },
+  { label: 'Analytics', icon: BarChart3, path: '/app/team/analytics' },
+  { label: 'SE Queue', icon: Sparkles, path: '/app/team/se-queue' },
   { label: 'Profile', icon: User, path: '/app/team/profile' },
 ];
 

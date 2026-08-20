@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+ import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import useAuthStore from '@store/authStore';
 import { Spinner } from '@components/ui/Primitives';
@@ -21,6 +21,41 @@ const Resources = lazy(() => import('@pages/Resources'));
 const BlogPost = lazy(() => import('@pages/BlogPost'));
 const Contact = lazy(() => import('@pages/Contact'));
 const Legal = lazy(() => import('@pages/Legal'));
+const Changelog = lazy(() => import('@pages/Changelog'));
+const Help = lazy(() => import('@pages/Help'));
+const Demo = lazy(() => import('@pages/Demo'));
+const Quiz = lazy(() => import('@pages/Quiz'));
+const Roadmap = lazy(() => import('@pages/Roadmap'));
+const ServiceCostPage = lazy(() => import('@pages/ServiceCost'));
+const ServiceTimelinePage = lazy(() => import('@pages/ServiceTimeline'));
+const GuidesPage = lazy(() => import('@pages/Guides'));
+const GuideDetail = lazy(() => import('@pages/GuideDetail'));
+const BundleDetail = lazy(() => import('@pages/BundleDetail'));
+const ExpressCheckout = lazy(() => import('@pages/ExpressCheckout'));
+const WebsiteAudit = lazy(() => import('@pages/tools/WebsiteAudit'));
+const Estimator = lazy(() => import('@pages/tools/Estimator'));
+const BriefBuilder = lazy(() => import('@pages/tools/BriefBuilder'));
+const LegalStarterPack = lazy(() => import('@pages/tools/LegalStarterPack'));
+const GSTInvoice = lazy(() => import('@pages/tools/GSTInvoice'));
+const InstantEstimate = lazy(() => import('@pages/tools/InstantEstimate'));
+const LegalTemplate = lazy(() => import('@pages/tools/LegalTemplate'));
+const InvoiceGenerator = lazy(() => import('@pages/tools/InvoiceGenerator'));
+const PreviewGenerator = lazy(() => import('@pages/tools/PreviewGenerator'));
+const Blueprint = lazy(() => import('@pages/tools/Blueprint'));
+const Glossary = lazy(() => import('@pages/tools/Glossary'));
+const Showcase = lazy(() => import('@pages/tools/Showcase'));
+
+// Checkout & misc public
+const Checkout = lazy(() => import('@pages/Checkout'));
+const ESign = lazy(() => import('@pages/ESign'));
+const PaymentConfirmation = lazy(() => import('@pages/PaymentConfirmation'));
+const Programs = lazy(() => import('@pages/Programs'));
+const RFPSubmit = lazy(() => import('@pages/RFPSubmit'));
+const RFPList = lazy(() => import('@pages/RFPList'));
+const ServiceDetail = lazy(() => import('@pages/ServiceDetail'));
+const Compare = lazy(() => import('@pages/Compare'));
+const ReferralPage = lazy(() => import('@pages/Referral'));
+const FAQ = lazy(() => import('@pages/FAQ'));
 
 // Auth
 const Login = lazy(() => import('@pages/auth/Login'));
@@ -44,6 +79,14 @@ const ClientEngagements = lazy(() => import('@app/client/Engagements'));
 const ClientContracts = lazy(() => import('@app/client/Contracts'));
 const ClientTimesheets = lazy(() => import('@app/client/Timesheets'));
 const ClientNotifications = lazy(() => import('@app/client/Notifications'));
+const ClientMilestones = lazy(() => import('@app/client/Milestones'));
+const ClientReferrals = lazy(() => import('@app/client/Referrals'));
+const ClientWorkspace = lazy(() => import('@app/client/Workspace'));
+const ClientFeedback = lazy(() => import('@app/client/Feedback'));
+const ClientActivity = lazy(() => import('@app/client/ClientPanels').then((m) => m.Activity));
+const ClientChanges = lazy(() => import('@app/client/ClientPanels').then((m) => m.Changes));
+const ClientReports = lazy(() => import('@app/client/ClientPanels').then((m) => m.Reports));
+const ClientHandover = lazy(() => import('@app/client/ClientPanels').then((m) => m.Handover));
 
 // Team dashboard
 const TeamLayout = lazy(() => import('@app/team/TeamLayout'));
@@ -52,6 +95,17 @@ const TeamTasks = lazy(() => import('@app/team/Tasks'));
 const TeamProjects = lazy(() => import('@app/team/Projects'));
 const TeamProfile = lazy(() => import('@app/team/Profile'));
 const TeamTimesheets = lazy(() => import('@app/team/Timesheets'));
+const TeamCalendar = lazy(() => import('@app/team/Calendar'));
+const TeamReviews = lazy(() => import('@app/team/Reviews'));
+const TeamKnowledge = lazy(() => import('@app/team/Knowledge'));
+const TeamQueue = lazy(() => import('@app/team/PmDashboards').then((m) => m.Queue));
+const TeamSprints = lazy(() => import('@app/team/PmDashboards').then((m) => m.Sprints));
+const TeamResources = lazy(() => import('@app/team/PmDashboards').then((m) => m.Resources));
+const TeamQuality = lazy(() => import('@app/team/PmDashboards').then((m) => m.Quality));
+const TeamFinance = lazy(() => import('@app/team/PmDashboards').then((m) => m.Finance));
+const TeamClients = lazy(() => import('@app/team/PmDashboards').then((m) => m.Clients));
+const TeamAnalyticsDash = lazy(() => import('@app/team/PmDashboards').then((m) => m.Analysis));
+const TeamSEQueue = lazy(() => import('@app/team/PmDashboards').then((m) => m.SEQueue));
 
 // Admin dashboard
 const AdminLayout = lazy(() => import('@app/admin/AdminLayout'));
@@ -68,6 +122,9 @@ const AdminSettings = lazy(() => import('@app/admin/Settings'));
 const AdminFinance = lazy(() => import('@app/admin/Finance'));
 const AdminEngagements = lazy(() => import('@app/admin/Engagements'));
 const AdminNotifications = lazy(() => import('@app/admin/Notifications'));
+const AdminRFPs = lazy(() => import('@app/admin/RFPs'));
+const AdminReferrals = lazy(() => import('@app/admin/Referrals'));
+const AdminReports = lazy(() => import('@app/admin/Reports'));
 
 // ── Layout wrappers ─────────────────────────
 
@@ -141,6 +198,39 @@ export default function AppRoutes() {
         <Route path="resources/:id" element={<BlogPost />} />
         <Route path="contact" element={<Contact />} />
         <Route path="legal/*" element={<Legal />} />
+        <Route path="changelog" element={<Changelog />} />
+        <Route path="help" element={<Help />} />
+        <Route path="demo" element={<Demo />} />
+        <Route path="quiz" element={<Quiz />} />
+        <Route path="roadmap" element={<Roadmap />} />
+        <Route path="guides" element={<GuidesPage />} />
+        <Route path="guides/:slug" element={<GuideDetail />} />
+        <Route path="bundles/:slug" element={<BundleDetail />} />
+        <Route path="services/:category/:slug/cost" element={<ServiceCostPage />} />
+        <Route path="services/:category/:slug/timeline" element={<ServiceTimelinePage />} />
+        <Route path="checkout/express" element={<ExpressCheckout />} />
+        <Route path="tools/website-audit" element={<WebsiteAudit />} />
+        <Route path="tools/estimator" element={<Estimator />} />
+        <Route path="tools/brief-generator" element={<BriefBuilder />} />
+        <Route path="tools/legal-starter-pack" element={<LegalStarterPack />} />
+        <Route path="tools/gst-invoice" element={<GSTInvoice />} />
+        <Route path="tools/instant-estimate" element={<InstantEstimate />} />
+        <Route path="tools/legal-templates" element={<LegalTemplate />} />
+        <Route path="tools/invoice-generator" element={<InvoiceGenerator />} />
+        <Route path="tools/preview-generator" element={<PreviewGenerator />} />
+        <Route path="tools/blueprint" element={<Blueprint />} />
+        <Route path="tools/glossary" element={<Glossary />} />
+        <Route path="tools/showcase" element={<Showcase />} />
+        <Route path="checkout" element={<Checkout />} />
+        <Route path="esign" element={<ESign />} />
+        <Route path="payment-confirmation" element={<PaymentConfirmation />} />
+        <Route path="programs" element={<Programs />} />
+        <Route path="rfp/submit" element={<RFPSubmit />} />
+        <Route path="rfp/list" element={<RFPList />} />
+        <Route path="services/:id" element={<ServiceDetail />} />
+        <Route path="compare" element={<Compare />} />
+        <Route path="referral" element={<ReferralPage />} />
+        <Route path="faq" element={<FAQ />} />
       </Route>
 
       {/* Auth pages (no navbar/footer) */}
@@ -173,6 +263,15 @@ export default function AppRoutes() {
           <Route path="contracts/:id" element={<ClientContracts />} />
           <Route path="timesheets" element={<ClientTimesheets />} />
           <Route path="notifications" element={<ClientNotifications />} />
+          <Route path="milestones" element={<ClientMilestones />} />
+          <Route path="referrals" element={<ClientReferrals />} />
+          <Route path="workspace" element={<ClientWorkspace />} />
+          <Route path="workspace/:id" element={<ClientWorkspace />} />
+          <Route path="feedback" element={<ClientFeedback />} />
+          <Route path="activity" element={<ClientActivity />} />
+          <Route path="changes" element={<ClientChanges />} />
+          <Route path="reports" element={<ClientReports />} />
+          <Route path="handover" element={<ClientHandover />} />
         </Route>
       </Route>
 
@@ -184,7 +283,18 @@ export default function AppRoutes() {
           <Route path="projects" element={<TeamProjects />} />
           <Route path="projects/:id" element={<TeamProjects />} />
           <Route path="timesheets" element={<TeamTimesheets />} />
+          <Route path="calendar" element={<TeamCalendar />} />
+          <Route path="reviews" element={<TeamReviews />} />
+          <Route path="knowledge" element={<TeamKnowledge />} />
           <Route path="profile" element={<TeamProfile />} />
+          <Route path="queue" element={<TeamQueue />} />
+          <Route path="sprints" element={<TeamSprints />} />
+          <Route path="resources" element={<TeamResources />} />
+          <Route path="quality" element={<TeamQuality />} />
+          <Route path="finance" element={<TeamFinance />} />
+          <Route path="clients" element={<TeamClients />} />
+          <Route path="analytics" element={<TeamAnalyticsDash />} />
+          <Route path="se-queue" element={<TeamSEQueue />} />
         </Route>
       </Route>
 
@@ -204,6 +314,9 @@ export default function AppRoutes() {
           <Route path="finance" element={<AdminFinance />} />
           <Route path="engagements" element={<AdminEngagements />} />
           <Route path="notifications" element={<AdminNotifications />} />
+          <Route path="rfps" element={<AdminRFPs />} />
+          <Route path="referrals" element={<AdminReferrals />} />
+          <Route path="reports" element={<AdminReports />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Route>

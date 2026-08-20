@@ -1,3 +1,7 @@
+import { config } from "dotenv";
+import { resolve } from "path";
+config({ path: resolve(__dirname, "../../../.env") });
+
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -23,6 +27,9 @@ import { notificationRoutes } from "./routes/notifications";
 import { publicApiRoutes } from "./routes/publicApi";
 import { adminRoutes } from "./routes/admin";
 import { toolRoutes } from "./routes/tools";
+import { blogRoutes } from "./routes/blog";
+import { cartRoutes } from "./routes/cart";
+import { quoteRoutes } from "./routes/quotes";
 
 const app = Fastify({
   logger: {
@@ -66,6 +73,9 @@ async function start() {
   await app.register(publicApiRoutes, { prefix: "/" });
   await app.register(adminRoutes, { prefix: "/" });
   await app.register(toolRoutes, { prefix: "/" });
+  await app.register(blogRoutes, { prefix: "/" });
+  await app.register(cartRoutes, { prefix: "/" });
+  await app.register(quoteRoutes, { prefix: "/" });
 
   const port = Number(process.env.PORT) || 4000;
   const host = process.env.HOST ?? "0.0.0.0";

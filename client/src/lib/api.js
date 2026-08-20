@@ -62,10 +62,14 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        const currentToken = localStorage.getItem('sf_access_token');
         const { data } = await axios.post(
           `${API_BASE}/auth/refresh-token`,
           {},
-          { withCredentials: true }
+          {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${currentToken}` },
+          }
         );
 
         const newToken = data.data.accessToken;

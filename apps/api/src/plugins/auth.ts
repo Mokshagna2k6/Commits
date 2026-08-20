@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET ?? "dev-secret-change-me";
+const JWT_SECRET = process.env.JWT_SECRET ?? process.env.NEXTAUTH_SECRET ?? "dev-secret-change-me";
 
 export interface JwtPayload {
   sub: string;
@@ -33,12 +33,17 @@ export async function authPlugin(app: FastifyInstance) {
 
   app.addHook("onRequest", async (req: FastifyRequest) => {
     const header = req.headers.authorization;
-    if (!header?.startsWith("Bearer ")) return;
+    if (!header?.startsWith("Bearer ")) {
+      if (req.url.includes("/cart") || req.url.includes("/auth/me")) {
+        req.log.warn({ url: req.url, hasAuth: !!header }, "No Bearer token on protected route");
+      }
+      return;
+    }
 
     try {
       req.user = verifyToken(header.slice(7));
-    } catch {
-      // Token invalid — leave user undefined
+    } catch (err: any) {
+      req.log.warn({ url: req.url, error: err.message }, "Token verification failed");
     }
   });
 }

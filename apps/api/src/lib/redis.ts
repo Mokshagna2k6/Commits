@@ -1,10 +1,17 @@
 import Redis from "ioredis";
 
 export const redis = new Redis(process.env.REDIS_URL ?? "redis://localhost:6379", {
-  maxRetriesPerRequest: 3,
+  maxRetriesPerRequest: null,
+  enableOfflineQueue: true,
   retryStrategy(times) {
-    return Math.min(times * 200, 5000);
+    if (times > 10) return null;
+    return Math.min(times * 500, 5000);
   },
+  lazyConnect: true,
+});
+
+redis.connect().catch(() => {
+  console.warn("Redis not available — auth features requiring Redis will fail gracefully");
 });
 
 export const cache = {

@@ -15,11 +15,15 @@ datasource db {
 model Org {
   id             String   @id // ORG-YYYY-NNNN
   name           String
-  type           String   // INDIVIDUAL|SOLE_PROP|LLP|PVT_LTD|OPC|SECTION8
+  type           String   @default("INDIVIDUAL") // INDIVIDUAL|SOLE_PROP|LLP|PVT_LTD|OPC|SECTION8
   gstin          String?
   gstinVerified  Boolean  @default(false) @map("gstin_verified")
   pan            String?
-  billingAddress Json     @map("billing_address")
+  billingAddress Json     @default("{}") @map("billing_address")
+  contactEmail   String?  @map("contact_email")
+  contactPhone   String?  @map("contact_phone")
+  tier           String?  // STARTER|GROWTH|PREMIUM
+  status         String   @default("ACTIVE") // ACTIVE|INACTIVE|SUSPENDED
   creditTier     String   @default("T0") @map("credit_tier") // T0|T1|T2
   healthState    String   @default("ACTIVE") @map("health_state") // ACTIVE|COOLING|DORMANT|LOST
   kycStatus      String   @default("NONE") @map("kyc_status") // NONE|BASIC|ENHANCED|CLEARED
@@ -229,25 +233,32 @@ model Estimate {
 // ═══════════════════════════════════════════════════════════
 
 model Order {
-  id             String   @id // ORD-YYYY-MM-XXXX
-  orgId          String   @map("org_id")
-  estimateId     String   @map("estimate_id")
-  engagementId   String?  @map("engagement_id")
-  projectName    String   @map("project_name")
-  primaryContact Json     @map("primary_contact")
-  commsPref      String   @default("PORTAL") @map("comms_pref")
-  paymentMode    String   @default("MILESTONE") @map("payment_mode") // MILESTONE|UPFRONT|CUSTOM
-  clauseConfig   Json     @map("clause_config")
-  milestoneMode  String   @default("A") @map("milestone_mode") // A|B
-  tier           String?  // STARTER|GROWTH|PREMIUM
-  referralCode   String?  @map("referral_code")
-  status         String   @default("PENDING")
-  createdAt      DateTime @default(now()) @map("created_at")
+  id               String    @id // ORD-YYYY-MM-XXXX
+  orgId            String    @map("org_id")
+  estimateId       String?   @map("estimate_id")
+  engagementId     String?   @map("engagement_id")
+  projectName      String?   @map("project_name")
+  primaryContact   Json?     @map("primary_contact")
+  commsPref        String    @default("PORTAL") @map("comms_pref")
+  paymentMode      String    @default("MILESTONE") @map("payment_mode")
+  clauseConfig     Json?     @map("clause_config")
+  milestoneMode    String    @default("A") @map("milestone_mode")
+  tier             String?   // STARTER|GROWTH|PREMIUM
+  referralCode     String?   @map("referral_code")
+  services         Json?     // [serviceId, ...] for express checkout
+  subtotal         Int?      // paise
+  gst              Int?      // paise
+  grandTotal       Int?      @map("grand_total") // paise
+  razorpayOrderId  String?   @map("razorpay_order_id")
+  status           String    @default("PENDING")
+  paidAt           DateTime? @map("paid_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
 
   org       Org       @relation(fields: [orgId], references: [id])
-  estimate  Estimate  @relation(fields: [estimateId], references: [id])
+  estimate  Estimate? @relation(fields: [estimateId], references: [id])
   contracts Contract[]
   projects  Project[]
+  payments  Payment[]
 
   @@map("orders")
 }
@@ -440,6 +451,8 @@ model Invoice {
   grandTotal   Int       @map("grand_total")
   status       String    @default("DRAFT") // DRAFT|SENT|VIEWED|PAID|PARTIALLY_PAID|OVERDUE|CANCELLED|DISPUTED
   dunningStage Int       @default(0) @map("dunning_stage")
+  razorpayOrderId      String?  @map("razorpay_order_id")
+  stripePaymentIntentId String? @map("stripe_payment_intent_id")
   paymentLink  String?   @map("payment_link")
   utr          String?
   fileKey      String?   @map("file_key")
@@ -781,8 +794,9 @@ model Referral {
 
 model Blueprint {
   id                   String    @id @default(uuid())
-  phone                String
-  advisorAnswers       Json      @map("advisor_answers")
+  phone                String?
+  industry             String?
+  advisorAnswers       Json      @default("{}") @map("advisor_answers")
   outputPdfKey         String?   @map("output_pdf_key")
   recommendedPackageId String?   @map("recommended_package_id")
   creditExpiresAt      DateTime? @map("credit_expires_at")
@@ -796,6 +810,9 @@ model Blueprint {
 model ShowcaseItem {
   id                  String   @id @default(uuid())
   projectId           String?  @map("project_id")
+  category            String?
+  tier                String?
+  published           Boolean  @default(false)
   beforeScreenshotKey String?  @map("before_screenshot_key")
   afterScreenshotKey  String?  @map("after_screenshot_key")
   reviewText          String?  @map("review_text")
@@ -850,8 +867,10 @@ model ToolSession {
 model ToolConversion {
   id             String   @id @default(uuid())
   sessionId      String   @map("session_id")
-  conversionType String   @map("conversion_type")
+  conversionType String?  @map("conversion_type")
   targetId       String?  @map("target_id")
+  email          String?
+  source         String?
   createdAt      DateTime @default(now()) @map("created_at")
 
   session ToolSession @relation(fields: [sessionId], references: [id])
@@ -861,12 +880,55 @@ model ToolConversion {
 
 model ToolInvoice {
   id            String   @id @default(uuid())
-  userId        String   @map("user_id")
-  invoiceNumber String   @map("invoice_number")
+  sessionId     String?  @map("session_id")
+  userId        String?  @map("user_id")
+  invoiceNumber String?  @map("invoice_number")
   data          Json
   pdfKey        String?  @map("pdf_key")
   createdAt     DateTime @default(now()) @map("created_at")
 
-  @@unique([userId, invoiceNumber])
   @@map("tool_invoices")
+}
+
+// ═══════════════════════════════════════════════════════════
+// LEADS & CRM
+// ═══════════════════════════════════════════════════════════
+
+model Lead {
+  id            String    @id @default(uuid())
+  name          String
+  email         String
+  phone         String?
+  company       String?
+  message       String?
+  preferredDate DateTime? @map("preferred_date")
+  source        String    @default("demo_page") // demo_page|contact|referral|tool
+  status        String    @default("NEW") // NEW|CONTACTED|QUALIFIED|CONVERTED|LOST
+  assignedTo    String?   @map("assigned_to")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@map("leads")
+}
+
+// ═══════════════════════════════════════════════════════════
+// PAYMENTS
+// ═══════════════════════════════════════════════════════════
+
+model Payment {
+  id               String   @id @default(uuid())
+  orderId          String   @map("order_id")
+  gateway          String   // RAZORPAY|STRIPE|BANK_TRANSFER
+  gatewayPaymentId String?  @map("gateway_payment_id")
+  gatewayOrderId   String?  @map("gateway_order_id")
+  amount           Int      // paise
+  currency         String   @default("INR")
+  status           String   @default("PENDING") // PENDING|CAPTURED|FAILED|REFUNDED
+  method           String?  // upi|card|netbanking|wallet
+  metadata         Json?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("payments")
 }
