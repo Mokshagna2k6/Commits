@@ -1,0 +1,200 @@
+import type { FastifyInstance } from "fastify";
+import { prisma } from "@stackfox/prisma";
+import { requireAuth } from "../plugins/auth";
+import { emitEvent } from "../lib/events";
+import * as ids from "../lib/id";
+import { verifyRazorpaySignature } from "../lib/payments";
+
+export async function financeRoutes(app: FastifyInstance) {
+  // Invoices
+  app.get("/invoices", async (req) => {
+    const { engId, orgId, status, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const where: any = {};
+    if (engId) where.engagementId = engId;
+    if (orgId) where.orgId = orgId;
+    if (status) where.status = status;
+
+    const [items, total] = await Promise.all([
+      prisma.invoice.findMany({
+        where,
+        skip: (parseInt(page) - 1) * parseInt(limit),
+        take: parseInt(limit),
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.invoice.count({ where }),
+    ]);
+    return { items, total };
+  });
+
+  app.get("/invoices/:id", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const invoice = await prisma.invoice.findUnique({ where: { id } });
+    if (!invoice) return reply.code(404).send({ error: "Invoice not found" });
+    return invoice;
+  });
+
+  app.post("/invoices", async (req, reply) => {
+    if (!requireAuth(req, reply)) return;
+    const body = req.body as any;
+    const subtotal = body.subtotal ?? 0;
+    const gstRate = 0.18;
+    const igst = Math.round(subtotal * gstRate);
+
+    return prisma.invoice.create({
+      data: {
+        id: ids.invoiceId(),
+        engagementId: body.engagementId,
+        orgId: body.orgId,
+        milestoneRef: body.milestoneRef,
+        sacCode: body.sacCode ?? "998314",
+        gstType: body.gstType ?? "IGST",
+        subtotal,
+        igst,
+        grandTotal: subtotal + igst,
+        status: "DRAFT",
+      },
+    });
+  });
+
+  // Record UTR
+  app.patch("/invoices/:id/utr", async (req, reply) => {
+    if (!requireAuth(req, reply)) return;
+    const { id } = req.params as { id: string };
+    const { utr, paidAt } = req.body as { utr: string; paidAt?: string };
+
+    const updated = await prisma.invoice.update({
+      where: { id },
+      data: {
+        utr,
+        paidAt: paidAt ? new Date(paidAt) : new Date(),
+        status: "PAID",
+      },
+    });
+
+    await emitEvent({
+      code: "INVOICE_PAID",
+      payload: { invoiceId: id, utr },
+      actor: req.user!.sub,
+      engagementId: updated.engagementId ?? undefined,
+    });
+
+    return updated;
+  });
+
+  // Razorpay webhook
+  app.post("/webhooks/razorpay", async (req, reply) => {
+    const signature = req.headers["x-razorpay-signature"] as string;
+    const body = JSON.stringify(req.body);
+
+    if (!verifyRazorpaySignature(body, signature)) {
+      return reply.code(400).send({ error: "Invalid signature" });
+    }
+
+    const event = req.body as any;
+    if (event.event === "payment.captured") {
+      const orderId = event.payload?.payment?.entity?.order_id;
+      if (orderId) {
+        const invoice = await prisma.invoice.findFirst({
+          where: { razorpayOrderId: orderId },
+        });
+        if (invoice) {
+          await prisma.invoice.update({
+            where: { id: invoice.id },
+            data: { status: "PAID", paidAt: new Date() },
+          });
+          await emitEvent({
+            code: "INVOICE_PAID",
+            payload: { invoiceId: invoice.id, gateway: "razorpay" },
+            actor: "system",
+            engagementId: invoice.engagementId ?? undefined,
+          });
+        }
+      }
+    }
+    return { ok: true };
+  });
+
+  // Stripe webhook
+  app.post("/webhooks/stripe", async (req, reply) => {
+    const event = req.body as any;
+    if (event.type === "payment_intent.succeeded") {
+      const piId = event.data?.object?.id;
+      if (piId) {
+        const invoice = await prisma.invoice.findFirst({
+          where: { stripePaymentIntentId: piId },
+        });
+        if (invoice) {
+          await prisma.invoice.update({
+            where: { id: invoice.id },
+            data: { status: "PAID", paidAt: new Date() },
+          });
+          await emitEvent({
+            code: "INVOICE_PAID",
+            payload: { invoiceId: invoice.id, gateway: "stripe" },
+            actor: "system",
+            engagementId: invoice.engagementId ?? undefined,
+          });
+        }
+      }
+    }
+    return { ok: true };
+  });
+
+  // AR Aging
+  app.get("/finance/ar-aging", async (req) => {
+    const invoices = await prisma.invoice.findMany({
+      where: { status: { in: ["SENT", "OVERDUE"] } },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const now = Date.now();
+    const buckets = { current: 0, d30: 0, d60: 0, d90: 0, d90plus: 0 };
+    for (const inv of invoices) {
+      const days = Math.floor((now - inv.createdAt.getTime()) / 86400000);
+      const amt = inv.grandTotal ?? 0;
+      if (days <= 0) buckets.current += amt;
+      else if (days <= 30) buckets.d30 += amt;
+      else if (days <= 60) buckets.d60 += amt;
+      else if (days <= 90) buckets.d90 += amt;
+      else buckets.d90plus += amt;
+    }
+    return buckets;
+  });
+
+  // WIP summary
+  app.get("/finance/wip", async (req) => {
+    return prisma.wipLedger.findMany({ orderBy: { createdAt: "desc" }, take: 100 });
+  });
+
+  // Rev-rec summary
+  app.get("/finance/rev-rec", async (req) => {
+    return prisma.revrecLedger.findMany({ orderBy: { createdAt: "desc" }, take: 100 });
+  });
+
+  // GSTR-1 export
+  app.get("/finance/gstr1", async (req) => {
+    const { month, year } = req.query as { month: string; year: string };
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0);
+
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        status: "PAID",
+        paidAt: { gte: startDate, lte: endDate },
+      },
+      include: { org: true },
+    });
+
+    return invoices.map((inv) => ({
+      invoiceId: inv.id,
+      gstin: (inv.org as any)?.gstin ?? "",
+      sacCode: inv.sacCode,
+      subtotal: inv.subtotal,
+      igst: inv.igst,
+      cgst: inv.cgst,
+      sgst: inv.sgst,
+      grandTotal: inv.grandTotal,
+      paidAt: inv.paidAt,
+    }));
+  });
+}

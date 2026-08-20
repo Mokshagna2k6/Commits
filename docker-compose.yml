@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # ── MongoDB ────────────────────────────────
+#  mongo:
+#    image: mongo:7
+#    container_name: stackfox-mongo
+#    restart: unless-stopped
+#    ports:
+#      - '27017:27017'
+#    volumes:
+#      - mongo_data:/data/db
+#    environment:
+#      MONGO_INITDB_DATABASE: stackfox
+#    healthcheck:
+#      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+
+  # ── Backend API ────────────────────────────
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: stackfox-api
+    restart: unless-stopped
+    ports:
+      - '5000:5000'
+    # depends_on:
+    #   mongo:
+    #     condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: ${MONGODB_URI}
+      CLIENT_URL: http://localhost:3000
+      JWT_SECRET: ${JWT_SECRET:-change-this-to-a-64-char-random-string}
+      JWT_ACCESS_EXPIRY: 15m
+      JWT_REFRESH_EXPIRY: 7d
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-StackFox <noreply@stackfox.in>}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      ADMIN_EMAIL: admin@stackfox.in
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-StackFox@Admin2024}
+      # Required for OTP-based Admin Mode persistence
+      ADMIN_PHONE: ${ADMIN_PHONE:-+91 00000 00000}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:5000/api/health/ping']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Frontend (Nginx serving built React) ───
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+    container_name: stackfox-web
+    restart: unless-stopped
+    ports:
+      - '3000:80'
+      - '443:443'
+    depends_on:
+      - server
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+  # ── Seed runner (one-time) ─────────────────
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: stackfox-seed
+    # depends_on:
+    #   mongo:
+    #     condition: service_healthy
+    environment:
+      MONGODB_URI: ${MONGODB_URI}
+      ADMIN_EMAIL: admin@stackfox.in
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-StackFox@Admin2024}
+      ADMIN_PHONE: ${ADMIN_PHONE:-+91 00000 00000}
+      ADMIN_NAME: StackFox Admin
+      JWT_SECRET: ${JWT_SECRET:-temp}
+    command: sh -c "node src/seed/seedAdmin.js && node src/seed/seedCatalog.js"
+    restart: 'no'
+
+volumes:
+  mongo_data:
+    driver: local
+  uploads_data:
+    driver: local

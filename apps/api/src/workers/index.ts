@@ -1,0 +1,20 @@
+import "./docGen";
+import "./notifications";
+import "./webhookDispatcher";
+import "./activityTranslator";
+import "./reconciliation";
+import "./dunning";
+import "./slaCron";
+import "./timesheetCompiler";
+import "./revRec";
+import "./wipLedger";
+import "./renewalScanner";
+import "./softex";
+import "./sandboxRebuild";
+import "./harvestReminder";
+import "./archiveRetention";
+import "./previewGen";
+import "./referralProcessor";
+import "./whatsappCommerce";
+
+console.log("[workers] All 18 workers started");
