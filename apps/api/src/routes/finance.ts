@@ -5,6 +5,30 @@ import { emitEvent } from "../lib/events";
 import * as ids from "../lib/id";
 import { verifyRazorpaySignature } from "../lib/payments";
 
+// Shapes a raw Prisma invoice into the fields the client dashboard reads
+// (total/paidAmount/invoiceNumber/gst/clientDetails), and lowercases status
+// to match client/src/lib/utils.js's statusColors keys (e.g. "partially-paid").
+function serializeInvoice(inv: any) {
+  const status = String(inv.status ?? "DRAFT").toLowerCase().replace(/_/g, "-");
+  const paidAmount = status === "paid" ? inv.grandTotal : 0;
+  return {
+    ...inv,
+    _id: inv.id,
+    invoiceNumber: inv.id,
+    status,
+    total: inv.grandTotal,
+    paidAmount,
+    gst: {
+      isInterState: inv.gstType === "IGST",
+      igst: inv.igst,
+      cgst: inv.cgst,
+      sgst: inv.sgst,
+    },
+    clientDetails: { email: inv.org?.contactEmail ?? "" },
+    project: inv.engagement ? { projectNumber: inv.engagement.id } : null,
+  };
+}
+
 export async function financeRoutes(app: FastifyInstance) {
   // Invoices
   app.get("/invoices", async (req) => {
@@ -17,20 +41,27 @@ export async function financeRoutes(app: FastifyInstance) {
     const [items, total] = await Promise.all([
       prisma.invoice.findMany({
         where,
+        include: { org: true, engagement: true },
         skip: (parseInt(page) - 1) * parseInt(limit),
         take: parseInt(limit),
         orderBy: { createdAt: "desc" },
       }),
       prisma.invoice.count({ where }),
     ]);
-    return { items, total };
+    return {
+      data: items.map(serializeInvoice),
+      meta: { pagination: { total, page: parseInt(page), limit: parseInt(limit) } },
+    };
   });
 
   app.get("/invoices/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
-    const invoice = await prisma.invoice.findUnique({ where: { id } });
+    const invoice = await prisma.invoice.findUnique({
+      where: { id },
+      include: { org: true, engagement: true },
+    });
     if (!invoice) return reply.code(404).send({ error: "Invoice not found" });
-    return invoice;
+    return { data: serializeInvoice(invoice) };
   });
 
   app.post("/invoices", async (req, reply) => {

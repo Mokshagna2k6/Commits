@@ -21,6 +21,7 @@ import { programRoutes } from "./routes/programs";
 import { rfpRoutes } from "./routes/rfps";
 import { eventRoutes } from "./routes/events";
 import { financeRoutes } from "./routes/finance";
+import { paymentRoutes } from "./routes/payments";
 import { fileRoutes } from "./routes/files";
 import { ticketRoutes } from "./routes/tickets";
 import { notificationRoutes } from "./routes/notifications";
@@ -67,6 +68,7 @@ async function start() {
   await app.register(rfpRoutes, { prefix: "/" });
   await app.register(eventRoutes, { prefix: "/" });
   await app.register(financeRoutes, { prefix: "/" });
+  await app.register(paymentRoutes, { prefix: "/" });
   await app.register(fileRoutes, { prefix: "/" });
   await app.register(ticketRoutes, { prefix: "/" });
   await app.register(notificationRoutes, { prefix: "/" });

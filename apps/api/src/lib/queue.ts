@@ -1,7 +1,17 @@
 import { Queue, Worker, type Job, type WorkerOptions } from "bullmq";
 import { redis } from "./redis";
 
-const connection = { host: redis.options.host, port: redis.options.port };
+// BullMQ needs the full connection (password/tls included — Upstash requires both)
+// and maxRetriesPerRequest:null, or Queue/Worker connections hang instead of erroring.
+const connection = {
+  host: redis.options.host,
+  port: redis.options.port,
+  username: redis.options.username,
+  password: redis.options.password,
+  tls: redis.options.tls,
+  maxRetriesPerRequest: null as null,
+  connectTimeout: 5000,
+};
 
 export function createQueue(name: string) {
   return new Queue(name, { connection });
