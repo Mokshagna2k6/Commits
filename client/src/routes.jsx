@@ -243,7 +243,7 @@ export default function AppRoutes() {
       </Route>
 
       {/* Client dashboard */}
-      <Route path="app/client" element={<ProtectedRoute roles={['client', 'admin', 'CLIENT', 'CLIENT_ADMIN', 'CLIENT_PM', 'CLIENT_VIEWER', 'ADMIN']} />}>
+      <Route path="app/client" element={<ProtectedRoute roles={['client', 'admin', 'CLIENT', 'CLIENT_ADMIN', 'CLIENT_PM', 'CLIENT_VIEWER', 'INDIVIDUAL_CLIENT', 'ORG_OWNER', 'ADMIN']} />}>
         <Route element={<ClientLayout />}>
           <Route index element={<ClientOverview />} />
           <Route path="projects" element={<ClientProjects />} />

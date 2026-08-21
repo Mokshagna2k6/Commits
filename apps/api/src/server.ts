@@ -1,6 +1,4 @@
-import { config } from "dotenv";
-import { resolve } from "path";
-config({ path: resolve(__dirname, "../../../.env") });
+import "./env";
 
 import Fastify from "fastify";
 import cors from "@fastify/cors";

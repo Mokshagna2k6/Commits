@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import fp from "fastify-plugin";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET ?? process.env.NEXTAUTH_SECRET ?? "dev-secret-change-me";
@@ -28,7 +29,11 @@ declare module "fastify" {
   }
 }
 
-export async function authPlugin(app: FastifyInstance) {
+// Wrapped with fastify-plugin: without it, Fastify's default encapsulation
+// scopes decorateRequest/addHook to this plugin's own context only, so
+// req.user would never be set for routes registered as separate siblings
+// (i.e. every other route file) and requireAuth() would 401 valid tokens.
+export const authPlugin = fp(async function authPlugin(app: FastifyInstance) {
   app.decorateRequest("user", undefined);
 
   app.addHook("onRequest", async (req: FastifyRequest) => {
@@ -46,7 +51,7 @@ export async function authPlugin(app: FastifyInstance) {
       req.log.warn({ url: req.url, error: err.message }, "Token verification failed");
     }
   });
-}
+});
 
 export function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   if (!req.user) {
