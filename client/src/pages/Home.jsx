@@ -7,11 +7,12 @@ import {
   Palette, Server, Cloud, TrendingUp, MessageCircle, Box, Wrench, Star,
   Check, Sparkles, Briefcase, Gauge, Lock, Heart, Code2, ChevronDown,
   ChevronRight, Quote, Calendar, Headphones, Award, IndianRupee, Plus, Minus,
-  Bot, X, Edit3
+  Bot, Edit3
 } from 'lucide-react';
 import { usePageTitle, useScrollReveal } from '@lib/hooks';
 import { Section, SectionHeading } from '@components/ui/Primitives';
 import { BrandLogo } from '@components/ui/BrandLogo';
+import { FoxBot } from '@components/ui/FoxBot';
 import SF_DATA from '@data/stackfox-data.json';
 
 const iconMap = {
@@ -115,8 +116,6 @@ export default function Home() {
   const subtotal = sampleChips.filter((c) => picked.includes(c.id)).reduce((s, c) => s + c.price, 0);
   const gst = Math.round(subtotal * 0.18);
   const total = subtotal + gst;
-
-  const [botOpen, setBotOpen] = useState(false);
 
   const copyRef = () => {
     navigator.clipboard.writeText('stackfox.in/ref/SF' + Math.random().toString(36).substring(2, 7).toUpperCase());
@@ -1000,56 +999,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════
-          FOXBOT FLOATING WIDGET
-          ══════════════════════════════════════════════════════ */}
-      <div className="fixed bottom-6 right-6 z-40">
-        {botOpen && (
-          <div className="mb-3 w-76 bg-white rounded-2xl border border-warm-200 shadow-[0_16px_64px_rgba(0,0,0,0.12)] p-4 animate-scale-in" style={{ width: '292px' }}>
-            <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-9 h-9 rounded-full bg-fox-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-fox-200">
-              <BrandLogo size={18} />
-            </div>
-              <div className="flex-1">
-                <div className="text-sm font-bold text-warm-900">FoxBot</div>
-                <div className="text-[10px] text-warm-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                  Online · replies instantly
-                </div>
-              </div>
-              <button
-                onClick={() => setBotOpen(false)}
-                className="w-6 h-6 rounded-lg hover:bg-warm-100 flex items-center justify-center text-warm-400 hover:text-warm-700 transition-colors"
-              >
-                ×
-              </button>
-            </div>
-            <div className="bg-fox-50 rounded-xl p-3.5 text-xs text-warm-700 mb-3 border border-fox-100/50 leading-relaxed">
-              <div className="flex items-center gap-1.5 mb-1 font-bold text-fox-600">
-                Hi! AI Assistant here <Sparkles size={10} />
-              </div>
-              I can help you pick services, estimate your project, or book a call. What are you building?
-            </div>
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {['Build a website', 'Make an app', 'Need AI', 'Just exploring'].map((q) => (
-                <button key={q} className="text-[11px] px-2.5 py-1 rounded-lg bg-warm-50 border border-warm-150 text-warm-600 hover:border-fox-200 hover:text-fox-600 transition-all">
-                  {q}
-                </button>
-              ))}
-            </div>
-            <Link to="/contact" className="btn-fox w-full justify-center text-xs py-2 rounded-xl">
-              Open full chat <ArrowRight size={11} />
-            </Link>
-          </div>
-        )}
-        <button
-          onClick={() => setBotOpen((v) => !v)}
-          className="w-14 h-14 rounded-full bg-fox-500 hover:bg-fox-600 text-white flex items-center justify-center transition-all hover:scale-105 shadow-[0_8px_32px_rgba(255,77,0,0.35)] active:scale-95 group"
-          aria-label="Open FoxBot chat"
-        >
-          {botOpen ? <X size={24} /> : <BrandLogo size={24} className="group-hover:animate-bounce" />}
-        </button>
-      </div>
+      <FoxBot />
     </>
   );
 }

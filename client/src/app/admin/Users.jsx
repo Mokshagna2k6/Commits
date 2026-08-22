@@ -46,6 +46,17 @@ export default function AdminUsers() {
     } catch (err) { toast.error(err.response?.data?.message || 'Failed.'); }
   };
 
+  const isTeamMember = (user) => user.role?.toLowerCase() === 'team';
+
+  const toggleTeamMember = async (user) => {
+    const nextRole = isTeamMember(user) ? 'INDIVIDUAL_CLIENT' : 'team';
+    try {
+      await api.put(`/users/${user._id}`, { role: nextRole });
+      toast.success(isTeamMember(user) ? 'Removed from team.' : 'Added as team member.');
+      fetch();
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed.'); }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -78,18 +89,21 @@ export default function AdminUsers() {
               <th className="text-center py-3 px-4 font-semibold text-warm-700">Role</th>
               <th className="text-center py-3 px-4 font-semibold text-warm-700">Status</th>
               <th className="text-right py-3 px-4 font-semibold text-warm-700">Joined</th>
-              <th className="text-right py-3 px-4 font-semibold text-warm-700 w-24">Action</th>
+              <th className="text-right py-3 px-4 font-semibold text-warm-700">Actions</th>
             </tr></thead>
             <tbody>
               {users.map((u) => (
                 <tr key={u._id} className="border-b border-warm-100 hover:bg-warm-50">
                   <td className="py-3 px-4 font-medium text-warm-900">{u.name}</td>
                   <td className="py-3 px-4 text-warm-500">{u.email}</td>
-                  <td className="py-3 px-4 text-center"><Badge variant={roleBadge[u.role] || 'neutral'}>{u.role}</Badge></td>
+                  <td className="py-3 px-4 text-center"><Badge variant={roleBadge[u.role?.toLowerCase()] || 'neutral'}>{u.role}</Badge></td>
                   <td className="py-3 px-4 text-center"><Badge variant={u.isActive ? 'success' : 'danger'}>{u.isActive ? 'Active' : 'Inactive'}</Badge></td>
                   <td className="py-3 px-4 text-right text-warm-500">{formatDate(u.createdAt)}</td>
-                  <td className="py-3 px-4 text-right">
-                    <button onClick={() => toggleActive(u)} className="text-xs text-fox-500 hover:underline">
+                  <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                    <button onClick={() => toggleTeamMember(u)} className="text-xs text-fox-500 hover:underline">
+                      {isTeamMember(u) ? 'Remove from team' : 'Make team member'}
+                    </button>
+                    <button onClick={() => toggleActive(u)} className="text-xs text-warm-500 hover:underline">
                       {u.isActive ? 'Deactivate' : 'Activate'}
                     </button>
                   </td>

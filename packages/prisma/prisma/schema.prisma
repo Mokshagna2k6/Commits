@@ -48,6 +48,7 @@ model User {
   email     String   @unique
   phone     String?
   role      String   // 18 roles (11 internal + 7 external)
+  isActive  Boolean  @default(true) @map("is_active")
   authData  Json     @default("{}") @map("auth_data")
   createdAt DateTime @default(now()) @map("created_at")
 
