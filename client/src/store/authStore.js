@@ -78,9 +78,13 @@ const useAuthStore = create((set, get) => ({
       const res = await api.get('/auth/me');
       get().setUser(res.data.data.user);
       return res.data.data.user;
-    } catch {
-      get().setUser(null);
-      localStorage.removeItem('sf_access_token');
+    } catch (err) {
+      // Only clear the session on a real auth failure (401/403) — a
+      // transient network error or server 500 should not log the user out.
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        get().setUser(null);
+        localStorage.removeItem('sf_access_token');
+      }
       return null;
     }
   },

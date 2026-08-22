@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Star, Send, MessageSquare } from 'lucide-react';
 import { Badge } from '@components/ui/Primitives';
+import { formatDate } from '@lib/utils';
+import api from '@lib/api';
+import toast from 'react-hot-toast';
 
 const completedProjects = [
   { id: 1, name: 'E-commerce Platform', code: 'PRJ-1042', completedAt: '2026-07-28' },
@@ -14,10 +17,30 @@ export default function Feedback() {
   const [comment, setComment] = useState('');
   const [nps, setNps] = useState(8);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [history, setHistory] = useState([]);
 
-  const handleSubmit = (e) => {
+  const fetchHistory = () => api.get('/feedback').then((r) => setHistory(r.data.data || [])).catch(() => {});
+  useEffect(() => { fetchHistory(); }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    const project = completedProjects.find((p) => p.id === selected);
+    setSubmitting(true);
+    try {
+      await api.post('/feedback', {
+        projectRef: project ? `${project.name} (${project.code})` : null,
+        rating,
+        nps,
+        comment,
+      });
+      setSubmitted(true);
+      fetchHistory();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit feedback.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -34,6 +57,27 @@ export default function Feedback() {
             Submit Another
           </button>
         </div>
+        {history.length > 0 && (
+          <div className="bg-white rounded-2xl border border-warm-200 p-6">
+            <h3 className="text-sm font-semibold text-warm-900 mb-4">Your feedback history</h3>
+            <div className="space-y-3">
+              {history.map((f) => (
+                <div key={f.id} className="border border-warm-100 rounded-xl p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} size={14} className={s <= f.rating ? 'text-amber-400 fill-amber-400' : 'text-warm-200'} />
+                      ))}
+                    </div>
+                    <span className="text-xs text-warm-400">{formatDate(f.createdAt)}</span>
+                  </div>
+                  {f.projectRef && <p className="text-xs text-warm-500 mt-1">{f.projectRef}</p>}
+                  {f.comment && <p className="text-sm text-warm-700 mt-1">{f.comment}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -87,8 +131,8 @@ export default function Feedback() {
             className="w-full border border-warm-200 rounded-xl px-4 py-3 text-sm text-warm-800 placeholder:text-warm-400 focus:outline-none focus:ring-2 focus:ring-fox-500/30 resize-none" />
         </div>
 
-        <button type="submit" disabled={!rating} className="w-full py-3 rounded-xl bg-fox-500 text-white font-medium text-sm hover:bg-fox-600 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-          <Send size={16} /> Submit Feedback
+        <button type="submit" disabled={!rating || submitting} className="w-full py-3 rounded-xl bg-fox-500 text-white font-medium text-sm hover:bg-fox-600 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          <Send size={16} /> {submitting ? 'Submitting...' : 'Submit Feedback'}
         </button>
       </form>
     </div>
