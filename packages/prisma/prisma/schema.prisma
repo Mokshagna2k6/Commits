@@ -196,6 +196,21 @@ model Workspace {
   @@map("workspaces")
 }
 
+model Quote {
+  id          String    @id @default(uuid())
+  quoteNumber String    @unique @map("quote_number")
+  userId      String    @map("user_id")
+  items       Json      @default("[]")
+  subtotal    Int
+  gstAmount   Int       @map("gst_amount")
+  total       Int
+  status      String    @default("draft")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  validUntil  DateTime  @map("valid_until")
+
+  @@map("quotes")
+}
+
 model CustomLine {
   id             String  @id @default(uuid())
   workspaceId    String  @map("workspace_id")

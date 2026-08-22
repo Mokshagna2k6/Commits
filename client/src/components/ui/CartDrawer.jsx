@@ -50,8 +50,8 @@ export default function CartDrawer() {
     }
     setCreating(true);
     try {
-      const res = await api.post('/quotes');
-      toast.success(`Quote ${res.data.data.quote.quoteNumber} created!`);
+      const res = await api.post('/quotes', { items });
+      toast.success(`Quote ${res.data.data.quoteNumber} created!`);
       clearCart(isAuthenticated);
       setOpen(false);
       navigate('/app/client/quotes');

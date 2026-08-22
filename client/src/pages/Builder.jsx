@@ -19,7 +19,7 @@ import useUiStore from '@store/uiStore';
 import { Button, Section, SectionHeading } from '@components/ui/Primitives';
 import { BrandLogo } from '@components/ui/BrandLogo';
 import SF_DATA from '@data/stackfox-data.json';
-import axios from 'axios';
+import api from '@lib/api';
 import toast from 'react-hot-toast';
 
 
@@ -158,7 +158,7 @@ function AdminAuth({ onClose, onVerified }) {
     setLoading(true);
     setError('');
     try {
-      await axios.post('/api/auth/request-otp', { email });
+      await api.post('/auth/request-otp', { email });
       setStep(2);
       toast.success('Code sent to your email');
     } catch (err) {
@@ -172,7 +172,7 @@ function AdminAuth({ onClose, onVerified }) {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post('/api/auth/verify-otp', { email, otp });
+      const res = await api.post('/auth/verify-otp', { email, otp });
       if (res.data.data.isAdminVerified) {
         toast.success('Admin mode enabled');
         onVerified(email);
@@ -495,10 +495,10 @@ export default function Builder() {
     const fetchData = async () => {
       try {
         const [svcsRes, catsRes, pkgsRes, bndlsRes] = await Promise.all([
-          axios.get('/api/catalog/services?limit=500'),
-          axios.get('/api/catalog/categories'),
-          axios.get('/api/catalog/packages'),
-          axios.get('/api/catalog/bundles')
+          api.get('/catalog/services?limit=500'),
+          api.get('/catalog/categories'),
+          api.get('/catalog/packages'),
+          api.get('/catalog/bundles')
         ]);
         
         const rawServices = Array.isArray(svcsRes.data?.data) 
@@ -589,7 +589,7 @@ export default function Builder() {
   const handleCreateCategory = async (catData) => {
     setFormBusy(true);
     try {
-      const res = await axios.post('/api/admin/catalog/categories', catData);
+      const res = await api.post('/admin/catalog/categories', catData);
       setCatalog(prev => ({ ...prev, categories: [...prev.categories, res.data.data.category] }));
       toast.success('Category created!');
       setAddCatOpen(false);
@@ -611,7 +611,7 @@ export default function Builder() {
       const svc = catalog.services.find(s => s.id === id);
       if (!svc?._dbId) throw new Error("No DB ID");
 
-      await axios.patch(`/api/admin/catalog/services/${svc._dbId}`, apiUpdates);
+      await api.patch(`/admin/catalog/services/${svc._dbId}`, apiUpdates);
       
       setCatalog(prev => ({
         ...prev,
@@ -626,7 +626,7 @@ export default function Builder() {
   const handleCreateService = async (svcData) => {
     setFormBusy(true);
     try {
-      const res = await axios.post('/api/admin/catalog/services', svcData);
+      const res = await api.post('/admin/catalog/services', svcData);
       const s = res.data.data.service;
       const mapped = { ...s, id: s.dataId, lay: s.laymanExplanation, _dbId: s._id };
       setCatalog(prev => ({ ...prev, services: [...prev.services, mapped] }));
@@ -642,7 +642,7 @@ export default function Builder() {
   const handleCreatePackage = async (pkgData) => {
     setFormBusy(true);
     try {
-      const res = await axios.post('/api/admin/catalog/packages', pkgData);
+      const res = await api.post('/admin/catalog/packages', pkgData);
       const p = res.data.data.package;
       setCatalog(prev => ({ ...prev, packages: [...prev.packages, { ...p, id: p.dataId, _dbId: p._id }] }));
       toast.success('Package published!');
@@ -657,7 +657,7 @@ export default function Builder() {
   const handleCreateBundle = async (bndlData) => {
     setFormBusy(true);
     try {
-      const res = await axios.post('/api/admin/catalog/bundles', bndlData);
+      const res = await api.post('/admin/catalog/bundles', bndlData);
       const b = res.data.data.bundle;
       setCatalog(prev => ({ ...prev, bundles: [...prev.bundles, { ...b, id: b.dataId, _dbId: b._id }] }));
       toast.success('Industry bundle published!');
@@ -672,7 +672,7 @@ export default function Builder() {
   const handleDeactivate = async (type, id, dbId) => {
     if (!window.confirm(`Deactivate this ${type}? It will no longer be visible to customers.`)) return;
     try {
-      await axios.delete(`/api/admin/catalog/${type}s/${dbId}`);
+      await api.delete(`/admin/catalog/${type}s/${dbId}`);
       setCatalog(prev => ({
         ...prev,
         [type + 's']: prev[type + 's'].filter(item => (item._dbId || item._id) !== dbId)
