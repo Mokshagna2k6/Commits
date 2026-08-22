@@ -166,6 +166,17 @@ const useAuthStore = create((set, get) => ({
   isAdmin: () => ['admin', 'ADMIN'].includes(get().user?.role),
   isTeam: () => ['team', 'TEAM', 'SE', 'SENIOR_PM', 'PM', 'DEVELOPER', 'QA', 'DESIGNER', 'DEVOPS'].includes(get().user?.role),
   isClient: () => ['client', 'CLIENT', 'CLIENT_ADMIN', 'CLIENT_PM', 'CLIENT_VIEWER', 'INDIVIDUAL_CLIENT', 'ORG_OWNER'].includes(get().user?.role),
+
+  // Single source of truth for "which dashboard does this role land on" —
+  // role strings are inconsistently cased across the app (ADMIN vs team),
+  // so this must go through the role-family checks above, never a bare
+  // `role === 'admin'` comparison (that silently sends every real admin,
+  // whose role is "ADMIN", to the client dashboard instead).
+  getDashboardPath: () => {
+    if (get().isAdmin()) return '/app/admin';
+    if (get().isTeam()) return '/app/team';
+    return '/app/client';
+  },
 }));
 
 export default useAuthStore;

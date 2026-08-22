@@ -11,16 +11,14 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const { login, isLoading } = useAuthStore();
+  const { login, isLoading, getDashboardPath } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const result = await login(email, password);
     if (result.success) {
-      const role = result.user?.role;
-      const dash = role === 'admin' ? '/app/admin' : role === 'team' ? '/app/team' : '/app/client';
-      navigate(dash);
+      navigate(getDashboardPath());
     }
   };
 

@@ -68,18 +68,13 @@ const FoxLogo = () => (
 // ── User menu (auth dropdown) ───────────────────────────────────────────────
 const UserMenu = () => {
   const [open, setOpen] = useState(false);
-  const { user, logout } = useAuthStore();
+  const { user, logout, getDashboardPath } = useAuthStore();
   const navigate = useNavigate();
   const ref = useClickOutside(() => setOpen(false));
 
   if (!user) return null;
 
-  const dashPath =
-    user.role === 'admin'
-      ? '/app/admin'
-      : user.role === 'team'
-      ? '/app/team'
-      : '/app/client';
+  const dashPath = getDashboardPath();
 
   return (
     <div className="relative" ref={ref}>
