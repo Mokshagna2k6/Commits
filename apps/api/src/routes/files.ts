@@ -1,47 +1,57 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "@stackfox/prisma";
 import { requireAuth } from "../plugins/auth";
-import { uploadFile, getPresignedDownload, getPresignedUpload, deleteFile } from "../lib/storage";
-import { sha256 } from "../lib/hash";
+import { getPresignedDownload, getPresignedUpload } from "../lib/storage";
 
 export async function fileRoutes(app: FastifyInstance) {
   app.post("/files/upload", async (req, reply) => {
     if (!requireAuth(req, reply)) return;
     const body = req.body as any;
 
-    const key = `files/${body.engagementId ?? "general"}/${Date.now()}-${body.filename}`;
-    const presigned = await getPresignedUpload(key, body.contentType ?? "application/octet-stream");
+    const r2Key = `files/${body.projectId ?? "general"}/${Date.now()}-${body.filename}`;
+    const presigned = await getPresignedUpload(r2Key, body.contentType ?? "application/octet-stream");
 
     const file = await prisma.file.create({
       data: {
         name: body.filename,
-        key,
-        bucket: "stackfox-files",
-        size: body.size ?? 0,
-        mime: body.contentType ?? "application/octet-stream",
+        r2Key,
+        sizeBytes: body.size ?? 0,
+        mimeType: body.contentType ?? "application/octet-stream",
         uploadedBy: req.user!.sub,
-        engagementId: body.engagementId,
         projectId: body.projectId,
       },
     });
 
-    return { file, uploadUrl: presigned };
+    return { data: file, uploadUrl: presigned };
   });
 
-  app.get("/files", async (req) => {
-    const { engId, projectId } = req.query as { engId?: string; projectId?: string };
+  app.get("/files", async (req, reply) => {
+    if (!requireAuth(req, reply)) return;
+    const { projectId } = req.query as { projectId?: string };
     const where: any = {};
-    if (engId) where.engagementId = engId;
     if (projectId) where.projectId = projectId;
-    return prisma.file.findMany({ where, orderBy: { createdAt: "desc" } });
+    const files = await prisma.file.findMany({ where, orderBy: { createdAt: "desc" } });
+    return { data: files };
   });
 
   app.get("/files/:id/download", async (req, reply) => {
     const { id } = req.params as { id: string };
     const file = await prisma.file.findUnique({ where: { id } });
     if (!file) return reply.code(404).send({ error: "File not found" });
-    const url = await getPresignedDownload(file.key);
+    const url = await getPresignedDownload(file.r2Key);
     return { url };
+  });
+
+  app.delete("/files/:id", async (req, reply) => {
+    if (!requireAuth(req, reply)) return;
+    const { id } = req.params as { id: string };
+    const file = await prisma.file.findUnique({ where: { id } });
+    if (!file) return reply.code(404).send({ error: "File not found" });
+    if (file.uploadedBy !== req.user!.sub) {
+      return reply.code(403).send({ error: "You can only delete files you uploaded" });
+    }
+    await prisma.file.delete({ where: { id } });
+    return { success: true };
   });
 
   app.post("/files/:id/comment", async (req, reply) => {
@@ -62,23 +72,21 @@ export async function fileRoutes(app: FastifyInstance) {
   app.post("/vault", async (req, reply) => {
     if (!requireAuth(req, reply)) return;
     const body = req.body as any;
-    const encrypted = sha256(JSON.stringify(body.credentials));
 
     return prisma.credentialVault.create({
       data: {
-        engagementId: body.engagementId,
-        label: body.label,
-        encryptedBlob: encrypted,
-        addedBy: req.user!.sub,
+        projectId: body.projectId,
+        systemName: body.systemName ?? body.label,
+        encryptedBlob: Buffer.from(JSON.stringify(body.credentials ?? {})),
       },
     });
   });
 
   app.get("/vault", async (req) => {
-    const { engId } = req.query as { engId: string };
+    const { projectId } = req.query as { projectId: string };
     return prisma.credentialVault.findMany({
-      where: { engagementId: engId },
-      select: { id: true, label: true, createdAt: true, addedBy: true },
+      where: { projectId },
+      select: { id: true, systemName: true, accessedAt: true },
     });
   });
 

@@ -23,13 +23,13 @@ export default function Finance() {
 
   useEffect(() => {
     Promise.all([
-      api.get('/finance/invoices', { params: { limit: 20 } }),
+      api.get('/invoices', { params: { limit: 20 } }),
       api.get('/finance/ar-aging').catch(() => ({ data: { data: null } })),
     ]).then(([invRes, arRes]) => {
       setInvoices(invRes.data.data || []);
       const invs = invRes.data.data || [];
-      const totalOutstanding = invs.filter(i => i.status !== 'PAID').reduce((s, i) => s + (i.totalPaise || 0), 0);
-      const overdue = invs.filter(i => i.status === 'OVERDUE').length;
+      const totalOutstanding = invs.filter(i => i.status !== 'paid').reduce((s, i) => s + (i.grandTotal || 0), 0);
+      const overdue = invs.filter(i => i.status === 'overdue').length;
       setMetrics({
         totalInvoices: invs.length,
         outstanding: formatINR(totalOutstanding / 100),
@@ -81,7 +81,7 @@ export default function Finance() {
                     <td className="px-5 py-3 font-mono text-xs">{inv.invoiceNumber || inv.id}</td>
                     <td className="px-5 py-3">{inv.orgId || '–'}</td>
                     <td className="px-5 py-3 font-mono">{formatINR((inv.totalPaise || 0) / 100)}</td>
-                    <td className="px-5 py-3"><Badge variant={inv.status === 'PAID' ? 'success' : inv.status === 'OVERDUE' ? 'danger' : 'warning'}>{inv.status}</Badge></td>
+                    <td className="px-5 py-3"><Badge variant={getStatusBadge(inv.status)?.replace('badge-', '')}>{inv.status}</Badge></td>
                     <td className="px-5 py-3 text-warm-500">{inv.dueDate ? formatDate(inv.dueDate) : '–'}</td>
                   </tr>
                 ))}

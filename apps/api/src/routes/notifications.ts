@@ -2,6 +2,8 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "@stackfox/prisma";
 import { requireAuth } from "../plugins/auth";
 
+// Per-user notification inbox — distinct from NotificationContent (admin
+// templates keyed by event_code.channel, no userId/readAt on that model).
 export async function notificationRoutes(app: FastifyInstance) {
   app.get("/notifications", async (req, reply) => {
     if (!requireAuth(req, reply)) return;
@@ -10,21 +12,35 @@ export async function notificationRoutes(app: FastifyInstance) {
     if (unread === "true") where.readAt = null;
 
     const [items, total] = await Promise.all([
-      prisma.notificationContent.findMany({
+      prisma.notification.findMany({
         where,
         skip: (parseInt(page) - 1) * parseInt(limit),
         take: parseInt(limit),
         orderBy: { createdAt: "desc" },
       }),
-      prisma.notificationContent.count({ where }),
+      prisma.notification.count({ where }),
     ]);
-    return { items, total, unread: await prisma.notificationContent.count({ where: { userId: req.user!.sub, readAt: null } }) };
+    return {
+      data: items,
+      total,
+      unread: await prisma.notification.count({ where: { userId: req.user!.sub, readAt: null } }),
+    };
+  });
+
+  app.put("/notifications/:id/read", async (req, reply) => {
+    if (!requireAuth(req, reply)) return;
+    const { id } = req.params as { id: string };
+    const notification = await prisma.notification.findUnique({ where: { id } });
+    if (!notification || notification.userId !== req.user!.sub) {
+      return reply.code(404).send({ message: "Notification not found" });
+    }
+    return prisma.notification.update({ where: { id }, data: { readAt: new Date() } });
   });
 
   app.patch("/notifications/read", async (req, reply) => {
     if (!requireAuth(req, reply)) return;
     const { ids } = req.body as { ids: string[] };
-    await prisma.notificationContent.updateMany({
+    await prisma.notification.updateMany({
       where: { id: { in: ids }, userId: req.user!.sub },
       data: { readAt: new Date() },
     });
