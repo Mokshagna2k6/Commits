@@ -11,6 +11,9 @@ node_modules/
 client/dist/
 client/build/
 server/dist/
+apps/*/dist/
+packages/*/dist/
+*.tsbuildinfo
 
 # ── Environment variables ────────────────────
 .env

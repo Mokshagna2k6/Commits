@@ -49,6 +49,7 @@ const app = Fastify({
 async function start() {
   await app.register(cors, {
     origin: process.env.CORS_ORIGIN ?? "http://localhost:3000",
+    credentials: true,
   });
   await app.register(helmet);
   await app.register(rateLimit, { max: 100, timeWindow: "1 minute" });

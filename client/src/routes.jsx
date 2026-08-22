@@ -152,7 +152,7 @@ const PublicLayout = () => (
 );
 
 const ProtectedRoute = ({ roles }) => {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, getDashboardPath } = useAuthStore();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -160,7 +160,10 @@ const ProtectedRoute = ({ roles }) => {
 
   const userRole = user?.role?.toLowerCase();
   if (roles && !roles.includes(userRole) && !roles.includes(user?.role)) {
-    return <Navigate to="/" replace />;
+    // Role no longer matches this dashboard (e.g. admin just promoted/demoted
+    // this user) — send them to the dashboard their current role now owns,
+    // not to the homepage, so a role change actually takes them somewhere.
+    return <Navigate to={getDashboardPath()} replace />;
   }
 
   return (
