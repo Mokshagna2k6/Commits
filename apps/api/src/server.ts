@@ -24,6 +24,7 @@ import { feedbackRoutes } from "./routes/feedback";
 import { changeRequestRoutes } from "./routes/changeRequests";
 import { userRoutes } from "./routes/users";
 import { assistantRoutes } from "./routes/assistant";
+import { jobRoutes } from "./routes/jobs";
 import { fileRoutes } from "./routes/files";
 import { ticketRoutes } from "./routes/tickets";
 import { notificationRoutes } from "./routes/notifications";
@@ -75,6 +76,7 @@ async function start() {
   await app.register(changeRequestRoutes, { prefix: "/" });
   await app.register(userRoutes, { prefix: "/" });
   await app.register(assistantRoutes, { prefix: "/" });
+  await app.register(jobRoutes, { prefix: "/" });
   await app.register(fileRoutes, { prefix: "/" });
   await app.register(ticketRoutes, { prefix: "/" });
   await app.register(notificationRoutes, { prefix: "/" });

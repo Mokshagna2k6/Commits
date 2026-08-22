@@ -24,17 +24,11 @@ export default function HiringWall() {
     if (!form.name || !form.email) { toast.error('Name and email required.'); return; }
     setLoading(true);
     try {
-      // Try API, fallback to toast success for demo
       await api.post(`/jobs/${selected}/apply`, form);
       toast.success('Application submitted!');
       setForm({ name: '', email: '', phone: '', experience: '', coverLetter: '', portfolioUrl: '', linkedinUrl: '' });
     } catch (err) {
-      const msg = err.response?.data?.message;
-      if (msg) {
-        toast.error(msg);
-      } else {
-        toast.success('Submitted! (Demo Mode: API not responding)');
-      }
+      toast.error(err.response?.data?.message || 'Failed to submit application.');
     }
     setLoading(false);
   };

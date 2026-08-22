@@ -969,3 +969,42 @@ model Payment {
 
   @@map("payments")
 }
+
+// ═══════════════════════════════════════════════════════════
+// HIRING
+// ═══════════════════════════════════════════════════════════
+
+model Job {
+  id          String   @id
+  title       String
+  type        String   // full-time|part-time|contract|freelance|internship
+  location    String
+  experience  String
+  salary      String?
+  skills      Json     @default("[]")
+  description String
+  status      String   @default("OPEN") // OPEN|CLOSED
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  applications JobApplication[]
+
+  @@map("jobs")
+}
+
+model JobApplication {
+  id           String   @id @default(uuid())
+  jobId        String   @map("job_id")
+  name         String
+  email        String
+  phone        String?
+  experience   String?
+  coverLetter  String?  @map("cover_letter")
+  portfolioUrl String?  @map("portfolio_url")
+  linkedinUrl  String?  @map("linkedin_url")
+  status       String   @default("submitted") // submitted|screening|interview|technical|offer|hired|rejected|withdrawn
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  job Job @relation(fields: [jobId], references: [id])
+
+  @@map("job_applications")
+}
