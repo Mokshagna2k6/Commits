@@ -109,10 +109,14 @@ export async function quoteRoutes(app: FastifyInstance) {
     return { data: serializeQuote(quote) };
   });
 
-  // POST /quotes/:id/pay — create a Razorpay order for the final checkout step
+  // POST /quotes/:id/pay — create a Razorpay order for the final checkout step.
+  // The amount is computed here from the quote's own total and the payment
+  // mode, never taken from the client — a client-supplied amount would let
+  // anyone pay whatever they want for a project of any size.
   app.post("/quotes/:id/pay", async (req, reply) => {
     if (!requireAuth(req, reply)) return;
     const { id } = req.params as { id: string };
+    const { paymentMode } = req.body as { paymentMode?: string };
     const quote = await prisma.quote.findUnique({ where: { id } });
     if (!quote || quote.userId !== req.user!.sub) {
       return reply.code(404).send({ message: "Quote not found" });
@@ -121,9 +125,14 @@ export async function quoteRoutes(app: FastifyInstance) {
       return reply.code(400).send({ message: "This quote has already been paid." });
     }
 
+    const mode = ["MILESTONE", "UPFRONT", "FULL"].includes(paymentMode ?? "") ? paymentMode! : "FULL";
+    const amount = mode === "UPFRONT" ? Math.round(quote.total * 0.95)
+      : mode === "MILESTONE" ? Math.round(quote.total * 0.3)
+      : quote.total;
+
     let order;
     try {
-      order = await createRazorpayOrder(quote.total * 100, "INR", `quote_${quote.id}`, { quoteId: quote.id });
+      order = await createRazorpayOrder(amount * 100, "INR", `quote_${quote.id}`, { quoteId: quote.id, paymentMode: mode });
     } catch (err: any) {
       const description: string | undefined = err?.error?.description ?? err?.message;
       const statusCode: number | undefined = err?.statusCode;

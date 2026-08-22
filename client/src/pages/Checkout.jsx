@@ -93,14 +93,16 @@ export default function Checkout() {
   };
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
-  const payAmount = paymentMode === 'UPFRONT' ? Math.round(quote.total * 0.95)
-    : paymentMode === 'MILESTONE' ? Math.round(quote.total * 0.3)
+  // Starter has no Payment Terms step — it's always a single full payment.
+  const effectivePaymentMode = tier === 'STARTER' ? 'FULL' : paymentMode;
+  const payAmount = effectivePaymentMode === 'UPFRONT' ? Math.round(quote.total * 0.95)
+    : effectivePaymentMode === 'MILESTONE' ? Math.round(quote.total * 0.3)
     : quote.total;
 
   const handlePay = async () => {
     setPaying(true);
     try {
-      const { data } = await api.post(`/quotes/${quoteId}/pay`);
+      const { data } = await api.post(`/quotes/${quoteId}/pay`, { paymentMode: effectivePaymentMode });
       const order = data.data;
 
       const options = {
@@ -283,7 +285,10 @@ export default function Checkout() {
               <span className="text-sm text-warm-600">Amount due</span>
               <span className="font-mono font-black text-xl">{formatINR(payAmount)}</span>
             </div>
-            <p className="text-xs text-warm-400">UPI, card, netbanking, or EMI (orders ≥₹15,000). Agreement auto-accepted on payment for Starter packages.</p>
+            <p className="text-xs text-warm-400">
+              UPI, card, netbanking, or EMI (orders ≥₹15,000).{' '}
+              {tier === 'STARTER' ? 'Agreement auto-accepted on payment.' : 'Payment confirms the documents accepted in the previous step.'}
+            </p>
             <Button variant="primary" className="w-full" isLoading={paying} onClick={handlePay}>
               <CreditCard size={16} className="mr-2" /> Pay {formatINR(payAmount)}
             </Button>
