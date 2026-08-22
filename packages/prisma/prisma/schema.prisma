@@ -396,20 +396,41 @@ model ChangeRequest {
 }
 
 model Ticket {
-  id            String    @id // TKT-YYYY-XXXX
-  projectId     String    @map("project_id")
-  title         String
-  description   String
-  severity      String    // P1|P2|P3|P4
-  status        String    @default("OPEN") // OPEN|ACKNOWLEDGED|IN_PROGRESS|RESOLVED|VERIFIED|CLOSED
-  slaDeadline   DateTime  @map("sla_deadline")
-  escalationLvl Int       @default(1) @map("escalation_lvl")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  resolvedAt    DateTime? @map("resolved_at")
+  id             String    @id // TKT-YYYY-XXXX
+  projectId      String?   @map("project_id")
+  raisedBy       String    @map("raised_by")
+  subject        String
+  description    String
+  category       String    @default("general") // general|bug|billing|feature|urgent
+  priority       String    @default("medium")  // low|medium|high|urgent
+  severity       String    @default("P3")      // P1|P2|P3|P4 — PM-side triage
+  status         String    @default("OPEN")    // OPEN|ACKNOWLEDGED|IN_PROGRESS|RESOLVED|VERIFIED|CLOSED|REOPENED
+  resolution     String?
+  slaDeadline    DateTime? @map("sla_deadline")
+  escalationLvl  Int       @default(1) @map("escalation_lvl")
+  acknowledgedAt DateTime? @map("acknowledged_at")
+  resolvedAt     DateTime? @map("resolved_at")
+  closedAt       DateTime? @map("closed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
 
-  project Project @relation(fields: [projectId], references: [id])
+  project Project?      @relation(fields: [projectId], references: [id])
+  replies TicketReply[]
 
   @@map("tickets")
+}
+
+model TicketReply {
+  id         String   @id @default(cuid())
+  ticketId   String   @map("ticket_id")
+  senderId   String   @map("sender_id")
+  senderName String   @map("sender_name")
+  senderRole String   @map("sender_role")
+  message    String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_replies")
 }
 
 // ═══════════════════════════════════════════════════════════

@@ -8,21 +8,26 @@ import { verifyRazorpaySignature } from "../lib/payments";
 // Shapes a raw Prisma invoice into the fields the client dashboard reads
 // (total/paidAmount/invoiceNumber/gst/clientDetails), and lowercases status
 // to match client/src/lib/utils.js's statusColors keys (e.g. "partially-paid").
+// grandTotal/cgst/sgst/igst are stored in paise; formatINR (and the rest of
+// the display layer) expects rupees, so the computed display fields below
+// convert — the raw paise fields stay untouched via the ...inv spread for
+// anything (e.g. Razorpay order creation) that needs paise.
 function serializeInvoice(inv: any) {
   const status = String(inv.status ?? "DRAFT").toLowerCase().replace(/_/g, "-");
-  const paidAmount = status === "paid" ? inv.grandTotal : 0;
+  const totalRupees = inv.grandTotal / 100;
+  const paidAmount = status === "paid" ? totalRupees : 0;
   return {
     ...inv,
     _id: inv.id,
     invoiceNumber: inv.id,
     status,
-    total: inv.grandTotal,
+    total: totalRupees,
     paidAmount,
     gst: {
       isInterState: inv.gstType === "IGST",
-      igst: inv.igst,
-      cgst: inv.cgst,
-      sgst: inv.sgst,
+      igst: inv.igst / 100,
+      cgst: inv.cgst / 100,
+      sgst: inv.sgst / 100,
     },
     clientDetails: { email: inv.org?.contactEmail ?? "" },
     project: inv.engagement ? { projectNumber: inv.engagement.id } : null,

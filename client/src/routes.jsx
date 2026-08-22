@@ -83,10 +83,10 @@ const ClientMilestones = lazy(() => import('@app/client/Milestones'));
 const ClientReferrals = lazy(() => import('@app/client/Referrals'));
 const ClientWorkspace = lazy(() => import('@app/client/Workspace'));
 const ClientFeedback = lazy(() => import('@app/client/Feedback'));
-const ClientActivity = lazy(() => import('@app/client/ClientPanels').then((m) => m.Activity));
-const ClientChanges = lazy(() => import('@app/client/ClientPanels').then((m) => m.Changes));
-const ClientReports = lazy(() => import('@app/client/ClientPanels').then((m) => m.Reports));
-const ClientHandover = lazy(() => import('@app/client/ClientPanels').then((m) => m.Handover));
+const ClientActivity = lazy(() => import('@app/client/ClientPanels').then((m) => ({ default: m.Activity })));
+const ClientChanges = lazy(() => import('@app/client/ClientPanels').then((m) => ({ default: m.Changes })));
+const ClientReports = lazy(() => import('@app/client/ClientPanels').then((m) => ({ default: m.Reports })));
+const ClientHandover = lazy(() => import('@app/client/ClientPanels').then((m) => ({ default: m.Handover })));
 
 // Team dashboard
 const TeamLayout = lazy(() => import('@app/team/TeamLayout'));
@@ -98,14 +98,14 @@ const TeamTimesheets = lazy(() => import('@app/team/Timesheets'));
 const TeamCalendar = lazy(() => import('@app/team/Calendar'));
 const TeamReviews = lazy(() => import('@app/team/Reviews'));
 const TeamKnowledge = lazy(() => import('@app/team/Knowledge'));
-const TeamQueue = lazy(() => import('@app/team/PmDashboards').then((m) => m.Queue));
-const TeamSprints = lazy(() => import('@app/team/PmDashboards').then((m) => m.Sprints));
-const TeamResources = lazy(() => import('@app/team/PmDashboards').then((m) => m.Resources));
-const TeamQuality = lazy(() => import('@app/team/PmDashboards').then((m) => m.Quality));
-const TeamFinance = lazy(() => import('@app/team/PmDashboards').then((m) => m.Finance));
-const TeamClients = lazy(() => import('@app/team/PmDashboards').then((m) => m.Clients));
-const TeamAnalyticsDash = lazy(() => import('@app/team/PmDashboards').then((m) => m.Analysis));
-const TeamSEQueue = lazy(() => import('@app/team/PmDashboards').then((m) => m.SEQueue));
+const TeamQueue = lazy(() => import('@app/team/PmDashboards').then((m) => ({ default: m.Queue })));
+const TeamSprints = lazy(() => import('@app/team/PmDashboards').then((m) => ({ default: m.Sprints })));
+const TeamResources = lazy(() => import('@app/team/PmDashboards').then((m) => ({ default: m.Resources })));
+const TeamQuality = lazy(() => import('@app/team/PmDashboards').then((m) => ({ default: m.Quality })));
+const TeamFinance = lazy(() => import('@app/team/PmDashboards').then((m) => ({ default: m.Finance })));
+const TeamClients = lazy(() => import('@app/team/PmDashboards').then((m) => ({ default: m.Clients })));
+const TeamAnalyticsDash = lazy(() => import('@app/team/PmDashboards').then((m) => ({ default: m.Analysis })));
+const TeamSEQueue = lazy(() => import('@app/team/PmDashboards').then((m) => ({ default: m.SEQueue })));
 
 // Admin dashboard
 const AdminLayout = lazy(() => import('@app/admin/AdminLayout'));

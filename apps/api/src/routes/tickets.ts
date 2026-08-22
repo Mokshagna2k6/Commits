@@ -4,39 +4,111 @@ import { requireAuth } from "../plugins/auth";
 import { emitEvent } from "../lib/events";
 import * as ids from "../lib/id";
 
+function serializeTicket(t: any) {
+  return {
+    ...t,
+    _id: t.id,
+    ticketNumber: t.id,
+    status: String(t.status ?? "OPEN").toLowerCase(),
+    client: { _id: t.raisedBy },
+    replies: (t.replies ?? []).map((r: any) => ({
+      _id: r.id,
+      message: r.message,
+      createdAt: r.createdAt,
+      sender: { _id: r.senderId, name: r.senderName, role: r.senderRole },
+    })),
+  };
+}
+
 export async function ticketRoutes(app: FastifyInstance) {
-  app.post("/tickets", async (req, reply) => {
+  // Client-facing support desk — mounted at /support. The same Ticket model
+  // also backs the PM-side P1-P4 bug tracker further below at /tickets.
+  app.post("/support", async (req, reply) => {
     if (!requireAuth(req, reply)) return;
     const body = req.body as any;
+    if (!body.subject || !body.description) {
+      return reply.code(400).send({ message: "subject and description are required" });
+    }
+
     const ticket = await prisma.ticket.create({
       data: {
         id: ids.ticketId(),
-        projectId: body.projectId,
-        engagementId: body.engagementId,
+        raisedBy: req.user!.sub,
         subject: body.subject,
         description: body.description,
-        severity: body.severity ?? "P3",
+        category: body.category ?? "general",
+        priority: body.priority ?? "medium",
         status: "OPEN",
-        raisedBy: req.user!.sub,
       },
     });
 
     await emitEvent({
       code: "TICKET_RAISED",
-      payload: { ticketId: ticket.id, severity: ticket.severity },
+      payload: { ticketId: ticket.id, category: ticket.category, priority: ticket.priority },
       actor: req.user!.sub,
-      projectId: body.projectId,
-      engagementId: body.engagementId,
     });
 
-    return ticket;
+    return { data: serializeTicket(ticket) };
   });
 
+  app.get("/support", async (req, reply) => {
+    if (!requireAuth(req, reply)) return;
+    const tickets = await prisma.ticket.findMany({
+      where: { raisedBy: req.user!.sub },
+      include: { replies: { orderBy: { createdAt: "asc" } } },
+      orderBy: { createdAt: "desc" },
+    });
+    return { data: tickets.map(serializeTicket) };
+  });
+
+  app.get("/support/:id", async (req, reply) => {
+    if (!requireAuth(req, reply)) return;
+    const { id } = req.params as { id: string };
+    const ticket = await prisma.ticket.findUnique({
+      where: { id },
+      include: { replies: { orderBy: { createdAt: "asc" } } },
+    });
+    if (!ticket || ticket.raisedBy !== req.user!.sub) {
+      return reply.code(404).send({ message: "Ticket not found" });
+    }
+    return { data: { ticket: serializeTicket(ticket) } };
+  });
+
+  app.post("/support/:id/reply", async (req, reply) => {
+    if (!requireAuth(req, reply)) return;
+    const { id } = req.params as { id: string };
+    const { message } = req.body as { message?: string };
+    if (!message?.trim()) return reply.code(400).send({ message: "message is required" });
+
+    const ticket = await prisma.ticket.findUnique({ where: { id } });
+    if (!ticket || ticket.raisedBy !== req.user!.sub) {
+      return reply.code(404).send({ message: "Ticket not found" });
+    }
+
+    await prisma.ticketReply.create({
+      data: {
+        ticketId: id,
+        senderId: req.user!.sub,
+        senderName: req.user!.email,
+        senderRole: "client",
+        message: message.trim(),
+      },
+    });
+
+    if (ticket.status === "RESOLVED" || ticket.status === "CLOSED") {
+      await prisma.ticket.update({ where: { id }, data: { status: "REOPENED" } });
+    }
+
+    await emitEvent({ code: "TICKET_REPLY_ADDED", payload: { ticketId: id }, actor: req.user!.sub });
+
+    return { data: { success: true } };
+  });
+
+  // ── PM-side bug tracker (G7): P1-P4 severity, SLA, escalation ──────────
   app.get("/tickets", async (req) => {
-    const { projectId, engId, status, severity, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const { projectId, status, severity, page = "1", limit = "20" } = req.query as Record<string, string>;
     const where: any = {};
     if (projectId) where.projectId = projectId;
-    if (engId) where.engagementId = engId;
     if (status) where.status = status;
     if (severity) where.severity = severity;
 
@@ -54,7 +126,7 @@ export async function ticketRoutes(app: FastifyInstance) {
 
   app.get("/tickets/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
-    const ticket = await prisma.ticket.findUnique({ where: { id } });
+    const ticket = await prisma.ticket.findUnique({ where: { id }, include: { replies: true } });
     if (!ticket) return reply.code(404).send({ error: "Ticket not found" });
     return ticket;
   });
@@ -110,5 +182,34 @@ export async function ticketRoutes(app: FastifyInstance) {
     });
     await emitEvent({ code: "TICKET_REOPENED", payload: { ticketId: id }, actor: req.user!.sub });
     return updated;
+  });
+
+  // Team-side reply into a client's ticket (shows up in their Support view)
+  app.post("/tickets/:id/reply", async (req, reply) => {
+    if (!requireAuth(req, reply)) return;
+    const { id } = req.params as { id: string };
+    const { message } = req.body as { message?: string };
+    if (!message?.trim()) return reply.code(400).send({ error: "message is required" });
+
+    const ticket = await prisma.ticket.findUnique({ where: { id } });
+    if (!ticket) return reply.code(404).send({ error: "Ticket not found" });
+
+    await prisma.ticketReply.create({
+      data: {
+        ticketId: id,
+        senderId: req.user!.sub,
+        senderName: req.user!.email,
+        senderRole: "team",
+        message: message.trim(),
+      },
+    });
+
+    if (ticket.status === "OPEN") {
+      await prisma.ticket.update({ where: { id }, data: { status: "ACKNOWLEDGED", acknowledgedAt: new Date() } });
+    }
+
+    await emitEvent({ code: "TICKET_REPLY_ADDED", payload: { ticketId: id }, actor: req.user!.sub });
+
+    return { success: true };
   });
 }

@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Mail, Phone, MapPin } from 'lucide-react';
 import { BrandLogo } from '@components/ui/BrandLogo';
-import { toast } from 'react-hot-toast';
 
 const footerLinks = {
   Services: [
@@ -87,32 +86,13 @@ export default function Footer() {
             <div key={title}>
               <h4 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">{title}</h4>
               <ul className="space-y-2.5">
-                {links.map((link) => {
-                  const isInactive = link.label === 'Portfolio' || link.label === 'Project Wall';
-                  return (
-                    <li key={link.href}>
-                      <Link
-                        to={isInactive ? '#' : link.href}
-                        onClick={(e) => {
-                          if (isInactive) {
-                            e.preventDefault();
-                            toast('These are inactive for now. We will activate them soon.', {
-                              icon: '⏳',
-                              style: {
-                                borderRadius: '12px',
-                                background: '#333',
-                                color: '#fff',
-                              },
-                            });
-                          }
-                        }}
-                        className="text-sm text-warm-400 hover:text-fox-400 transition-colors"
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  );
-                })}
+                {links.map((link) => (
+                  <li key={link.href}>
+                    <Link to={link.href} className="text-sm text-warm-400 hover:text-fox-400 transition-colors">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
           ))}

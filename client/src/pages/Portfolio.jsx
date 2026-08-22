@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { usePageTitle } from '@lib/hooks';
-import { ExternalLink, Github, Layers, X, Sparkles, Rocket } from 'lucide-react';
+import { ExternalLink, Github, X, Sparkles, Rocket } from 'lucide-react';
 import { Section, SectionHeading, Button } from '@components/ui/Primitives';
 
 const projects = [
-  { title: 'GreenLeaf Organics', industry: 'E-Commerce', desc: 'Full-stack organic food marketplace with subscription box and delivery tracking.', tech: ['React', 'Node.js', 'MongoDB', 'Razorpay'], live: '#' },
-  { title: 'HealthFirst Portal', industry: 'Healthcare', desc: 'Patient portal with appointment booking, telemedicine, and prescription management.', tech: ['Next.js', 'Express', 'PostgreSQL', 'Socket.io'], live: '#' },
-  { title: 'PropertyDekho', industry: 'Real Estate', desc: 'Property listing with map view, virtual tours, and lead management CRM.', tech: ['React', 'Node.js', 'MongoDB', 'Google Maps'], live: '#' },
-  { title: 'EduBridge LMS', industry: 'EdTech', desc: 'Learning management system supporting 5000+ students with offline mobile app.', tech: ['React Native', 'Node.js', 'MongoDB', 'AWS'], live: '#' },
-  { title: 'FoodBox', industry: 'Food & Restaurant', desc: 'Online ordering platform with kitchen management and WhatsApp integration.', tech: ['React', 'Express', 'MongoDB', 'Twilio'], live: '#' },
-  { title: 'EventHub', industry: 'Events', desc: 'Event ticketing with seat selection, QR check-in, and attendee analytics.', tech: ['Next.js', 'Node.js', 'PostgreSQL', 'Stripe'], live: '#' },
+  { title: 'GreenLeaf Organics', industry: 'E-Commerce', desc: 'Full-stack organic food marketplace with subscription box and delivery tracking.', tech: ['React', 'Node.js', 'MongoDB', 'Razorpay'], live: '#', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80&auto=format&fit=crop' },
+  { title: 'HealthFirst Portal', industry: 'Healthcare', desc: 'Patient portal with appointment booking, telemedicine, and prescription management.', tech: ['Next.js', 'Express', 'PostgreSQL', 'Socket.io'], live: '#', image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80&auto=format&fit=crop' },
+  { title: 'PropertyDekho', industry: 'Real Estate', desc: 'Property listing with map view, virtual tours, and lead management CRM.', tech: ['React', 'Node.js', 'MongoDB', 'Google Maps'], live: '#', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80&auto=format&fit=crop' },
+  { title: 'EduBridge LMS', industry: 'EdTech', desc: 'Learning management system supporting 5000+ students with offline mobile app.', tech: ['React Native', 'Node.js', 'MongoDB', 'AWS'], live: '#', image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&q=80&auto=format&fit=crop' },
+  { title: 'FoodBox', industry: 'Food & Restaurant', desc: 'Online ordering platform with kitchen management and WhatsApp integration.', tech: ['React', 'Express', 'MongoDB', 'Twilio'], live: '#', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80&auto=format&fit=crop' },
+  { title: 'EventHub', industry: 'Events', desc: 'Event ticketing with seat selection, QR check-in, and attendee analytics.', tech: ['Next.js', 'Node.js', 'PostgreSQL', 'Stripe'], live: '#', image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80&auto=format&fit=crop' },
 ];
 
 export default function Portfolio() {
@@ -23,9 +23,9 @@ export default function Portfolio() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {projects.map((p, i) => (
           <div key={i} className="card-fx-elevated flex flex-col p-6 group">
-            <div className="w-full h-44 bg-gradient-to-br from-warm-100 to-warm-50 rounded-2xl mb-6 flex items-center justify-center group-hover:scale-[1.02] transition-transform duration-500 overflow-hidden relative">
-               <div className="absolute inset-0 bg-warm-900/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <Layers size={48} className="text-warm-300 group-hover:text-fox-500/20 transition-colors" />
+            <div className="w-full h-44 bg-warm-100 rounded-2xl mb-6 group-hover:scale-[1.02] transition-transform duration-500 overflow-hidden relative">
+              <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-warm-900/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <span className="badge-fx badge-fox self-start mb-3">{p.industry}</span>
             <h3 className="text-xl font-bold text-warm-900 mb-2">{p.title}</h3>
