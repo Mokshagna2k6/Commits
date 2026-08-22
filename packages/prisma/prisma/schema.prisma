@@ -197,16 +197,21 @@ model Workspace {
 }
 
 model Quote {
-  id          String    @id @default(uuid())
-  quoteNumber String    @unique @map("quote_number")
-  userId      String    @map("user_id")
-  items       Json      @default("[]")
-  subtotal    Int
-  gstAmount   Int       @map("gst_amount")
-  total       Int
-  status      String    @default("draft")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  validUntil  DateTime  @map("valid_until")
+  id              String    @id @default(uuid())
+  quoteNumber     String    @unique @map("quote_number")
+  userId          String    @map("user_id")
+  items           Json      @default("[]")
+  subtotal        Int
+  gstAmount       Int       @map("gst_amount")
+  total           Int
+  tier            String    @default("GROWTH") // STARTER|GROWTH|PREMIUM
+  estimateRange   Json      @default("{}")      // {format, low, mid, high} — frozen at quote creation
+  status          String    @default("draft")   // draft|checkout|paid
+  checkoutDetails Json      @default("{}")       // account/engagement/payment-terms captured across checkout steps
+  razorpayOrderId String?   @map("razorpay_order_id")
+  paidAt          DateTime? @map("paid_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  validUntil      DateTime  @map("valid_until")
 
   @@map("quotes")
 }

@@ -8,6 +8,7 @@ import Footer from '@components/layout/Footer';
 // ── Lazy page imports ───────────────────────
 const Home = lazy(() => import('@pages/Home'));
 const Builder = lazy(() => import('@pages/Builder'));
+const ScopeAdvisor = lazy(() => import('@pages/ScopeAdvisor'));
 const Catalog = lazy(() => import('@pages/Catalog'));
 const Packages = lazy(() => import('@pages/Packages'));
 const Industries = lazy(() => import('@pages/Industries'));
@@ -193,6 +194,7 @@ export default function AppRoutes() {
       <Route element={<PublicLayout />}>
         <Route index element={<Home />} />
         <Route path="builder" element={<Builder />} />
+        <Route path="advisor" element={<ScopeAdvisor />} />
         <Route path="catalog" element={<Catalog />} />
         <Route path="packages" element={<Packages />} />
         <Route path="industries" element={<Industries />} />
@@ -229,7 +231,7 @@ export default function AppRoutes() {
         <Route path="tools/blueprint" element={<Blueprint />} />
         <Route path="tools/glossary" element={<Glossary />} />
         <Route path="tools/showcase" element={<Showcase />} />
-        <Route path="checkout" element={<Checkout />} />
+        <Route path="checkout/:quoteId" element={<Checkout />} />
         <Route path="esign" element={<ESign />} />
         <Route path="payment-confirmation" element={<PaymentConfirmation />} />
         <Route path="programs" element={<Programs />} />

@@ -5,6 +5,7 @@ import {
   FileText, AlertTriangle, TrendingUp, Download, MessageSquare
 } from 'lucide-react';
 import { CURRENCIES } from '@lib/constants';
+import { computeEstimateRange, TIERS, TIER_LABELS } from '@lib/estimate';
 import { exportQuotePDF } from '@lib/pdfExport';
 import { Button, Spinner } from '@components/ui/Primitives';
 import useCartStore from '@store/cartStore';
@@ -23,6 +24,7 @@ export default function CartDrawer() {
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
+  const [tier, setTier] = useState('GROWTH');
   const overlayRef = useRef(null);
 
   // Lock body scroll when open
@@ -50,11 +52,12 @@ export default function CartDrawer() {
     }
     setCreating(true);
     try {
-      const res = await api.post('/quotes', { items });
-      toast.success(`Quote ${res.data.data.quoteNumber} created!`);
+      const res = await api.post('/quotes', { items, tier });
+      const quote = res.data.data;
+      toast.success(`Quote ${quote.quoteNumber} created!`);
       clearCart(isAuthenticated);
       setOpen(false);
-      navigate('/app/client/quotes');
+      navigate(`/checkout/${quote._id}`);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create quote.');
     }
@@ -79,6 +82,7 @@ export default function CartDrawer() {
   const sub = items.reduce((s, i) => s + i.price * i.quantity, 0);
   const tx = Math.round(sub * (cur.tax / 100));
   const grandTotal = sub + tx;
+  const estimateRange = useMemo(() => computeEstimateRange(sub, tier), [sub, tier]);
 
   if (!isOpen) return null;
 
@@ -191,6 +195,26 @@ export default function CartDrawer() {
         {/* Footer summary + CTA */}
         {itemCount > 0 && (
           <div className="border-t border-warm-100 px-5 py-4 space-y-3 bg-white">
+            {/* Tier selector — drives the Instant Estimate range + checkout steps */}
+            <div>
+              <div className="grid grid-cols-3 gap-1.5 bg-warm-50 rounded-xl p-1">
+                {TIERS.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTier(t)}
+                    className={`text-xs font-bold py-1.5 rounded-lg transition-colors ${tier === t ? 'bg-fox-500 text-white' : 'text-warm-500 hover:text-warm-800'}`}
+                  >
+                    {TIER_LABELS[t]}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-warm-500 mt-1.5 font-mono">
+                {estimateRange.format === 'flat'
+                  ? `Fixed: ${fmt(estimateRange.mid)}`
+                  : `Estimate: ${fmt(estimateRange.low)} – ${fmt(estimateRange.high)}`}
+              </p>
+            </div>
+
             {/* Totals */}
             <div className="space-y-1.5 text-sm">
               <div className="flex justify-between text-warm-500">

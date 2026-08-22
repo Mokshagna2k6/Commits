@@ -490,54 +490,23 @@ export default function Builder() {
     setParams(newParams, { replace: true });
   }, [activeCat, debouncedSearch, setParams]);
 
-  // Initialization: Fetch Data
+  // Initialization: Load catalog data.
+  //
+  // This intentionally reads the local catalog file, not a live endpoint.
+  // The backend's /catalog/* routes serve a different, incompatible dataset
+  // (a generic SDP service-unit table, priced in paise, with no consumer
+  // copy) — mapping that onto this storefront's friendly package catalog is
+  // a real content/schema project, not something to fake via a fetch that
+  // happens to 500 into a fallback. See PR/commit notes for the follow-up.
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const [svcsRes, catsRes, pkgsRes, bndlsRes] = await Promise.all([
-          api.get('/catalog/services?limit=500'),
-          api.get('/catalog/categories'),
-          api.get('/catalog/packages'),
-          api.get('/catalog/bundles')
-        ]);
-        
-        const rawServices = Array.isArray(svcsRes.data?.data) 
-          ? svcsRes.data.data 
-          : (svcsRes.data?.data?.services || []);
-        
-        const rawCategories = catsRes.data?.data?.categories || [];
-        const rawPackages = pkgsRes.data?.data?.packages || [];
-        const rawBundles = bndlsRes.data?.data?.bundles || [];
-
-        const mappedServices = rawServices.map(s => ({
-          ...s,
-          id: s.dataId,
-          _dbId: s._id,
-          lay: s.laymanExplanation || SF_DATA.services.find(ds => ds.id === s.dataId)?.lay || "",
-          roi: s.roi || SF_DATA.services.find(ds => ds.id === s.dataId)?.roi || null,
-          conflicts: s.conflicts || [],
-          requires: s.requires || []
-        }));
-
-        setCatalog({
-          services: mappedServices,
-          categories: rawCategories,
-          packages: rawPackages.map(p => ({ ...p, id: p.dataId, _dbId: p._id })),
-          bundles: rawBundles.map(b => ({ ...b, id: b.dataId, _dbId: b._id }))
-        });
-
-      } catch (err) {
-        console.error("Fetch failed", err);
-        // Fallback to local data with property mapping for compatibility
-        setCatalog({
-          services: SF_DATA.services.map(s => ({ ...s, dataId: s.id })),
-          categories: SF_DATA.categories.map(c => ({ ...c, dataId: c.id })),
-          packages: (SF_DATA.packages || []).map(p => ({ ...p, dataId: p.id })),
-          bundles: (SF_DATA.industryBundles || []).map(b => ({ ...b, dataId: b.id }))
-        });
-      } finally {
-        setIsLoading(false);
-      }
+      setCatalog({
+        services: SF_DATA.services.map(s => ({ ...s, dataId: s.id })),
+        categories: SF_DATA.categories.map(c => ({ ...c, dataId: c.id })),
+        packages: (SF_DATA.packages || []).map(p => ({ ...p, dataId: p.id })),
+        bundles: (SF_DATA.industryBundles || []).map(b => ({ ...b, dataId: b.id }))
+      });
+      setIsLoading(false);
     };
 
     fetchData();
@@ -1092,6 +1061,10 @@ export default function Builder() {
                </div>
             </div>
           )}
+          <Link to="/advisor" className="block bg-fox-500 rounded-3xl p-6 text-white hover:bg-fox-600 transition-colors">
+            <div className="flex items-center gap-2 mb-2 font-bold"><Sparkles size={18} /> Not sure what you need?</div>
+            <p className="text-xs text-white/80 leading-relaxed">Answer 10 quick questions and let AI recommend a configuration for you.</p>
+          </Link>
           <div className="bg-white rounded-3xl border border-warm-200 p-6">
             <h3 className="font-bold text-warm-900 mb-4">Building Guidance</h3>
             <div className="space-y-4">

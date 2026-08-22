@@ -159,7 +159,9 @@ export async function catalogueRoutes(app: FastifyInstance) {
   });
 
   app.get("/catalog/categories", async () => {
-    const cached = await cache.get("categories");
+    // Cache is best-effort — a Redis outage shouldn't take down category
+    // listing, which is cheap to compute directly from the DB anyway.
+    const cached = await cache.get("categories").catch(() => null);
     if (cached) return cached;
     const services = await prisma.serviceUnit.findMany({
       where: { status: "PUBLISHED" },
@@ -174,12 +176,14 @@ export async function catalogueRoutes(app: FastifyInstance) {
       tier1,
       tier2: [...tier2s],
     }));
-    await cache.set("categories", result, 3600);
+    await cache.set("categories", result, 3600).catch(() => {});
     return result;
   });
 
   app.get("/catalog/packages", async () => {
-    return prisma.package.findMany({ where: { status: "ACTIVE" } });
+    // Package has no status field — it's a fixed-price SKU tied to a
+    // published ServiceUnit, not something with its own lifecycle state.
+    return prisma.package.findMany();
   });
 
   app.get("/catalog/bundles", async () => {

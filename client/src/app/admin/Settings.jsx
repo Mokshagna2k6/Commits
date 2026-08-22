@@ -2,7 +2,7 @@ import { usePageTitle } from '@lib/hooks';
 import { Settings as SettingsIcon, Database, Mail, CreditCard, Shield } from 'lucide-react';
 
 const settingSections = [
-  { icon: Database, title: 'Database', desc: 'MongoDB connection status and backup configuration.', status: 'Connected' },
+  { icon: Database, title: 'Database', desc: 'PostgreSQL (Supabase) connection status and backup configuration.', status: 'Connected' },
   { icon: Mail, title: 'Email (SMTP)', desc: 'Configure SendGrid or SMTP for transactional emails.', status: 'Check .env' },
   { icon: CreditCard, title: 'Razorpay', desc: 'Payment gateway credentials and webhook configuration.', status: 'Check .env' },
   { icon: Shield, title: 'Security', desc: 'JWT secrets, rate limiting, and CORS configuration.', status: 'Active' },
@@ -31,7 +31,7 @@ export default function AdminSettings() {
       </div>
 
       <div className="bg-warm-100 rounded-2xl p-6 text-center">
-        <p className="text-sm text-warm-600">All configuration is managed via environment variables in <code className="bg-white px-2 py-0.5 rounded text-fox-500 text-xs font-mono">server/.env</code></p>
+        <p className="text-sm text-warm-600">All configuration is managed via environment variables in <code className="bg-white px-2 py-0.5 rounded text-fox-500 text-xs font-mono">.env</code></p>
         <p className="text-xs text-warm-400 mt-2">See README.md for the complete list of available settings.</p>
       </div>
     </div>
