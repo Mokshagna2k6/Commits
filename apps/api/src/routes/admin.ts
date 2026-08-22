@@ -14,7 +14,7 @@ export async function adminRoutes(app: FastifyInstance) {
       prisma.serviceUnit.findMany({
         skip: (parseInt(page) - 1) * parseInt(limit),
         take: parseInt(limit),
-        orderBy: { code: "asc" },
+        orderBy: { id: "asc" },
       }),
       prisma.serviceUnit.count(),
     ]);
@@ -43,7 +43,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const { serviceId } = req.query as { serviceId?: string };
     return prisma.featureUnit.findMany({
       where: serviceId ? { serviceId } : {},
-      orderBy: { code: "asc" },
+      orderBy: { sortOrder: "asc" },
     });
   });
 
@@ -79,7 +79,7 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Bundle CRUD
   app.get("/admin/bundles", async () => {
-    return prisma.bundle.findMany({ include: { items: true } });
+    return prisma.bundle.findMany();
   });
 
   app.post("/admin/bundles", async (req) => {
@@ -125,17 +125,19 @@ export async function adminRoutes(app: FastifyInstance) {
     return prisma.flag.update({ where: { id }, data: req.body as any });
   });
 
-  // Notification Templates
+  // Notification Templates — NotificationContent rows are all templates
+  // (one per event_code.channel key), there's no separate "isTemplate" flag.
   app.get("/admin/notification-templates", async () => {
-    return prisma.notificationContent.findMany({
-      where: { isTemplate: true },
-    });
+    return prisma.notificationContent.findMany({ orderBy: { key: "asc" } });
   });
 
   app.post("/admin/notification-templates", async (req) => {
-    return prisma.notificationContent.create({
-      data: { ...(req.body as any), isTemplate: true },
-    });
+    return prisma.notificationContent.create({ data: req.body as any });
+  });
+
+  app.patch("/admin/notification-templates/:key", async (req) => {
+    const { key } = req.params as { key: string };
+    return prisma.notificationContent.update({ where: { key }, data: req.body as any });
   });
 
   // User management
@@ -165,28 +167,47 @@ export async function adminRoutes(app: FastifyInstance) {
     });
   });
 
-  // Screening queue
+  // Screening queue — HOLD means "needs manual review"; PASS/FAIL are resolved.
   app.get("/admin/screening", async () => {
     return prisma.screeningResult.findMany({
-      where: { status: "PENDING" },
+      where: { result: "HOLD" },
       orderBy: { createdAt: "asc" },
     });
   });
 
   app.patch("/admin/screening/:id", async (req) => {
     const { id } = req.params as { id: string };
-    const { status, reviewNote } = req.body as { status: string; reviewNote?: string };
+    const { result, reviewNote } = req.body as { result: string; reviewNote?: string };
     return prisma.screeningResult.update({
       where: { id },
-      data: { status, reviewNote, reviewedAt: new Date() },
+      data: { result, reviewNote, reviewedBy: req.user!.sub, reviewedAt: new Date() },
     });
   });
 
   // SE queue
   app.get("/admin/se-queue", async () => {
     return prisma.workspace.findMany({
-      where: { seReviewStatus: "PENDING" },
+      where: { seStatus: "SE_QUEUE" },
       orderBy: { createdAt: "asc" },
     });
+  });
+
+  // Compliance calendar — statutory filings per org (GST/TDS/GSTR-1/SOFTEX/...)
+  app.get("/admin/compliance", async (req) => {
+    const { status } = req.query as { status?: string };
+    return prisma.complianceItem.findMany({
+      where: status ? { status } : {},
+      include: { org: { select: { id: true, name: true } } },
+      orderBy: { dueDate: "asc" },
+    });
+  });
+
+  app.post("/admin/compliance", async (req) => {
+    return prisma.complianceItem.create({ data: req.body as any });
+  });
+
+  app.patch("/admin/compliance/:id", async (req) => {
+    const { id } = req.params as { id: string };
+    return prisma.complianceItem.update({ where: { id }, data: req.body as any });
   });
 }

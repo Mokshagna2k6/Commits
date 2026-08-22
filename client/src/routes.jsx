@@ -125,6 +125,11 @@ const AdminNotifications = lazy(() => import('@app/admin/Notifications'));
 const AdminRFPs = lazy(() => import('@app/admin/RFPs'));
 const AdminReferrals = lazy(() => import('@app/admin/Referrals'));
 const AdminReports = lazy(() => import('@app/admin/Reports'));
+const AdminFlags = lazy(() => import('@app/admin/Governance').then((m) => ({ default: m.Flags })));
+const AdminPricing = lazy(() => import('@app/admin/Governance').then((m) => ({ default: m.Pricing })));
+const AdminTemplates = lazy(() => import('@app/admin/Governance').then((m) => ({ default: m.Templates })));
+const AdminCompliance = lazy(() => import('@app/admin/Governance').then((m) => ({ default: m.Compliance })));
+const AdminScreening = lazy(() => import('@app/admin/Governance').then((m) => ({ default: m.Screening })));
 
 // ── Layout wrappers ─────────────────────────
 
@@ -317,6 +322,11 @@ export default function AppRoutes() {
           <Route path="rfps" element={<AdminRFPs />} />
           <Route path="referrals" element={<AdminReferrals />} />
           <Route path="reports" element={<AdminReports />} />
+          <Route path="flags" element={<AdminFlags />} />
+          <Route path="pricing" element={<AdminPricing />} />
+          <Route path="templates" element={<AdminTemplates />} />
+          <Route path="compliance" element={<AdminCompliance />} />
+          <Route path="screening" element={<AdminScreening />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Route>

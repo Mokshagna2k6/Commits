@@ -757,13 +757,16 @@ model ComplianceItem {
 }
 
 model ScreeningResult {
-  id        String   @id @default(uuid())
-  orgId     String?  @map("org_id")
-  userId    String?  @map("user_id")
-  checkType String   @map("check_type") // SANCTIONS|KYC_BO|KYC_EDD
-  result    String   // PASS|HOLD|FAIL
-  details   Json?
-  createdAt DateTime @default(now()) @map("created_at")
+  id         String    @id @default(uuid())
+  orgId      String?   @map("org_id")
+  userId     String?   @map("user_id")
+  checkType  String    @map("check_type") // SANCTIONS|KYC_BO|KYC_EDD
+  result     String    // PASS|HOLD|FAIL
+  details    Json?
+  reviewNote String?   @map("review_note")
+  reviewedBy String?   @map("reviewed_by")
+  reviewedAt DateTime? @map("reviewed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
 
   org Org? @relation(fields: [orgId], references: [id])
 
