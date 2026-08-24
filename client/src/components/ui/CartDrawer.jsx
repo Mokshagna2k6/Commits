@@ -5,7 +5,7 @@ import {
   FileText, AlertTriangle, TrendingUp, Download, MessageSquare
 } from 'lucide-react';
 import { CURRENCIES } from '@lib/constants';
-import { computeEstimateRange, TIERS, TIER_LABELS } from '@lib/estimate';
+import { applyTierMultiplier, computeEstimateRange, TIERS, TIER_LABELS } from '@lib/estimate';
 import { exportQuotePDF } from '@lib/pdfExport';
 import { Button, Spinner } from '@components/ui/Primitives';
 import useCartStore from '@store/cartStore';
@@ -79,7 +79,8 @@ export default function CartDrawer() {
     }).format(val);
   };
 
-  const sub = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const rawSub = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const sub = applyTierMultiplier(rawSub, tier);
   const tx = Math.round(sub * (cur.tax / 100));
   const grandTotal = sub + tx;
   const estimateRange = useMemo(() => computeEstimateRange(sub, tier), [sub, tier]);

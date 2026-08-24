@@ -9,6 +9,17 @@ export interface EstimateRange {
   high: number;
 }
 
+export const TIER_MULTIPLIERS: Record<string, number> = {
+  STARTER: 1,
+  GROWTH: 1.5,
+  PREMIUM: 2.2,
+};
+
+export function applyTierMultiplier(rawSubtotal: number, tier: string): number {
+  return Math.round(rawSubtotal * (TIER_MULTIPLIERS[tier] ?? 1));
+}
+
+// subtotal here is already tier-adjusted (see applyTierMultiplier).
 export function computeEstimateRange(subtotal: number, tier: string): EstimateRange {
   if (tier === "STARTER") {
     return { format: "flat", tier, low: subtotal, mid: subtotal, high: subtotal };

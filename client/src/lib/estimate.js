@@ -1,6 +1,8 @@
 // Instant Estimate Engine — tier pricing bands (Product Bible §4.4).
-// Starter is a fixed flat price; Growth/Premium show a range around the
-// selected-items subtotal, since scope firms up during discovery.
+// Growth/Premium include added service overhead (PM, QA, extended
+// warranty, priority support) beyond the raw catalog sum, so each tier
+// applies its own price multiplier to the selected items before showing
+// a range around that adjusted amount. Starter is a fixed flat price.
 export const TIERS = ['STARTER', 'GROWTH', 'PREMIUM'];
 
 export const TIER_LABELS = {
@@ -9,6 +11,18 @@ export const TIER_LABELS = {
   PREMIUM: 'Premium',
 };
 
+// Matches the multipliers already used in tools/InstantEstimate.jsx.
+export const TIER_MULTIPLIERS = {
+  STARTER: 1,
+  GROWTH: 1.5,
+  PREMIUM: 2.2,
+};
+
+export function applyTierMultiplier(rawSubtotal, tier) {
+  return Math.round(rawSubtotal * (TIER_MULTIPLIERS[tier] ?? 1));
+}
+
+// subtotal here is already tier-adjusted (see applyTierMultiplier).
 export function computeEstimateRange(subtotal, tier) {
   if (tier === 'STARTER') {
     return { format: 'flat', tier, low: subtotal, mid: subtotal, high: subtotal };

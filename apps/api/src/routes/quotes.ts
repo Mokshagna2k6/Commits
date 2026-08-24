@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "@stackfox/prisma";
 import { requireAuth } from "../plugins/auth";
-import { computeEstimateRange } from "../lib/estimate";
+import { applyTierMultiplier, computeEstimateRange } from "../lib/estimate";
 import { createRazorpayOrder, verifyRazorpaySignature } from "../lib/payments";
 import { emitEvent } from "../lib/events";
 
@@ -52,7 +52,8 @@ export async function quoteRoutes(app: FastifyInstance) {
     }
     const tier = ["STARTER", "GROWTH", "PREMIUM"].includes(body?.tier ?? "") ? body!.tier! : "GROWTH";
 
-    const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+    const rawSubtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+    const subtotal = applyTierMultiplier(rawSubtotal, tier);
     const gstAmount = Math.round(subtotal * 0.18);
     const now = new Date();
     const validUntil = new Date(now.getTime() + (tier === "STARTER" ? 30 : 15) * 24 * 60 * 60 * 1000);
